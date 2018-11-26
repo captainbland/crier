@@ -1,0 +1,10 @@
+{
+  "name": "crier",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Captain Bland <lightnix@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "bootstrap": "4"
+  }
+}
