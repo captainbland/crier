@@ -10,6 +10,7 @@ use diesel::{Insertable, Queryable};
 use bcrypt::{DEFAULT_COST, hash, verify};
 
 use schema::crier_user;
+use iron_sessionstorage::Value;
 
 #[derive(Deserialize, PartialEq, Eq, Debug, Validate)]
 pub struct RegisterForm {
@@ -75,6 +76,10 @@ pub struct LoginForm {
     pub password: String
 }
 
+pub struct UserSession {
+    pub username: String
+}
+
 #[derive(Queryable)]
 pub struct LoginQuery {
     pub username: String,
@@ -89,6 +94,18 @@ impl<'a> Into<LoginQuery> for  &'a LoginForm {
                 println!("ERROR! Could not hash password. {:?}", e);
                 String::from("") // this should fail for every username; performance could be improved by not going to database but this error shouldn't actually happen unless there's a server config error
             }),
+        }
+    }
+}
+
+impl iron_sessionstorage::Value for UserSession {
+    fn get_key() -> &'static str { "logged_in_user" }
+    fn into_raw(self) -> String { self.username }
+    fn from_raw(value: String) -> Option<Self> {
+        if value.is_empty() {
+            None
+        } else {
+            Some(UserSession { username: value })
         }
     }
 }

@@ -8,6 +8,8 @@ use diesel::insert_into;
 use schema::crier_user;
 use bcrypt::verify;
 use user_model::{RegisterForm, UserCreation, User, LoginForm, LoginQuery};
+use iron_sessionstorage::Session;
+use user_model::UserSession;
 
 pub struct UserService;
 
@@ -29,16 +31,18 @@ impl UserService {
             }
     }
 
-    pub fn login(&self, conn: PooledConnection<ConnectionManager<PgConnection>>, login_form: &LoginForm) -> Result<User, String> {
+    pub fn login(&self, conn: PooledConnection<ConnectionManager<PgConnection>>, login_form: &LoginForm, session: &mut Session) -> Result<User, String> {
         use schema::crier_user::dsl::*;
 
         let login_query:LoginQuery = login_form.into();
-
         let user: Result<User, String> = match crier_user.filter(username.eq(&login_query.username)).limit(1).load::<User>(&conn) {
             Ok(res) => res.clone().pop()
                 .and_then(|u| {
                     match verify(&login_form.password[..], &u.password[..]) {
-                        Ok(true) => Some(Ok(u)),
+                        Ok(true) => {
+                            session.set(UserSession {username: login_query.username.clone() });
+                            Some(Ok(u))
+                        },
                         _ => Some(Err(String::from("Could not log you in")))
                     }
                 })

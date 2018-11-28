@@ -1,5 +1,6 @@
 #![feature(plugin)]
 #![feature(proc_macro_non_items)]
+#![feature(extern_prelude)]
 
 #[macro_use]
 extern crate iron;
@@ -27,14 +28,21 @@ extern crate validator;
 extern crate validator_derive;
 extern crate r2d2;
 extern crate bcrypt;
+extern crate iron_sessionstorage;
+extern crate redis;
 
 use std::path::Path;
 
-use iron::{Iron, Request, Response, IronResult, IronError, error::HttpError};
+use iron_sessionstorage::SessionStorage;
+use iron_sessionstorage::backends::*;
+use iron_sessionstorage::traits::*;
+use iron::prelude::*;
+use iron::*;
+
+
 use logger::Logger;
 use staticfile::Static;
 use iron::status;
-use iron::prelude::*;
 use router::{Router};
 use maud::*;
 use mount::Mount;
@@ -63,7 +71,6 @@ mod schema;
 use core::borrow::BorrowMut;
 use std::io::Read;
 use std::string::String;
-use iron::*;
 use urlencoded::UrlEncodedQuery;
 use validator::*;
 
@@ -73,6 +80,8 @@ use r2d2_middleware::*;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use std::env;
+use iron_sessionstorage::Session;
+
 
 fn index(req: &mut Request) -> IronResult<Response> {
     println!("plz render index plz");
@@ -118,7 +127,12 @@ fn post_register(req: &mut Request) -> IronResult<Response> {
 }
 
 fn get_login(req: &mut Request) -> IronResult<Response> {
-    Ok(Response::with((status::Ok, render_login_form(&ValidationErrors::new()))))
+    let mut session: &mut Session = req.session();
+    if session.get::<UserSession>().map(|r| r.is_some()).unwrap_or(true) {
+        Ok(Response::with((status::Ok, render_page("You are already logged in", html!{}))))
+    } else {
+        Ok(Response::with((status::Ok, render_login_form(&ValidationErrors::new()))))
+    }
 }
 
 fn post_login(req: &mut Request) -> IronResult<Response> {
@@ -128,11 +142,17 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
     let mut response: String = String::from("");
     match user_form.validate() {
         Ok(_) => {
+
+
             let res: Result<Response, IronError> = (req.extensions.get::<DatabaseExtension>())
                 .map(|p| p.get())
                 .and_then(|res| res.ok() )
                 .and_then(|con| {
-                    let user_res = user_service.login(con, &user_form);
+
+                    let mut session: &mut Session = req.session();
+
+
+                    let user_res = user_service.login(con, &user_form, session);
                     let result = match user_res {
                         Ok(user) => (Ok(Response::with((status::Ok, render_page("Thanks for logging in!", html!{("Thank you, ") (user_form.username)}))))),
                         Err(e) => {
@@ -148,6 +168,17 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
         }
         _ => Ok(Response::with((status::BadRequest, render_page("Could not log you in, seems like your details were wrong!", html!{}))))
 
+    }
+}
+
+struct Aaa(String);
+
+impl iron_sessionstorage::Value for Aaa {
+    fn get_key() -> &'static str { "foo" }
+    fn into_raw(self) -> String { self.0 }
+    fn from_raw(value: String) -> Option<Self> {
+        // Maybe validate that only 'a's are in the string
+        Some(Aaa(value))
     }
 }
 
@@ -171,6 +202,8 @@ fn main() {
     let connection_pool_middleware = r2d2_middleware::R2D2Middleware::new();
     let mut chain = Chain::new(mount);
     chain.link_before(connection_pool_middleware);
+    let my_secret = b"verysecret".to_vec();
+    chain.link_around(SessionStorage::new(RedisBackend::new("redis://172.17.0.4").unwrap()));
     chain.link_before(logger_before);
     chain.link_after(logger_after);
 

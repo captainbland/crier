@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Captain Bland <lightnix@gmail.com>"]
 
 [dependencies]
-iron = "*"
+iron = "0.6"
 router = "*"
 maud_macros = "*"
 iron-test = "*"
@@ -30,7 +30,8 @@ validator = "0.8.0"
 validator_derive = "0.8.0"
 regex = "1"
 bcrypt="*"
-
+redis = "*"
+iron-sessionstorage = { git="https://github.com/iron/iron-sessionstorage", features = ["redis-backend"] }
 [dependencies.maud]
 git = "https://github.com/captainbland/maud"
 features = ["iron"]
