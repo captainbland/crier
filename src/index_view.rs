@@ -1,4 +1,5 @@
 use maud::*;
+use navbar_info::NavbarInfo;
 
 fn header(page_title: &str) -> Markup {
     html! {
@@ -16,23 +17,32 @@ pub fn footer() -> Markup {
     html! { (PreEscaped(pre_escaped)) }
 }
 
-pub fn navbar() -> Markup {
+pub fn navbar(navbar_info: &NavbarInfo) -> Markup {
     html! {
         nav class="navbar navbar-expand-sm navbar-dark bg-dark mb-2" {
             ul class="navbar-nav" {
                 li class="nav-item" {
-                    a class="nav-link" href="#" { "Link 1" }
+                    a class="nav-link" href="/" { "Crier" }
+                }
+                @if navbar_info.logged_in == false {
+                    li class="nav-item" {
+                        a class="nav-link" href="/login" { "Log in" }
+                    }
+                } @else {
+                    li class="nav-item" {
+                        form method="POST" action="/logout" { input type="submit" value="logout" {} }
+                    }
                 }
             }
         }
     }
 }
 
-pub fn render_page(title: &str, contents: Markup) -> Markup {
+pub fn render_page(title: &str, navbar_info: &NavbarInfo, contents: Markup) -> Markup {
     html! {
         (header(title))
         body {
-            (navbar())
+            (navbar(navbar_info))
             div class="container" {
                 div class="row" {
                     div class="col-2-sm" {}
@@ -48,8 +58,8 @@ pub fn render_page(title: &str, contents: Markup) -> Markup {
     }
 }
 
-pub fn render_index() -> Markup {
-    render_page("Hello, world!", html! {
+pub fn render_index(navbar_info: &NavbarInfo) -> Markup {
+    render_page("Hello, world!", navbar_info, html! {
         p { "Welcome to my page!" }
     })
 }

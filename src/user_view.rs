@@ -3,9 +3,10 @@ use index_view::render_page;
 use validator::{ValidationErrors, ValidationError};
 use std::borrow::ToOwned;
 use std::borrow::Cow;
+use navbar_info::NavbarInfo;
 
-pub fn render_registration_form(errors: &ValidationErrors) -> Markup {
-    render_page("Registration", html!{
+pub fn render_registration_form(navbar_info: &NavbarInfo, errors: &ValidationErrors) -> Markup {
+    render_page("Registration", navbar_info,html!{
         form.form-group method="POST" action="/register" {
             (render_input("Username", "username", "text", errors))
             (render_input("Password", "password", "password", errors))
@@ -16,8 +17,8 @@ pub fn render_registration_form(errors: &ValidationErrors) -> Markup {
     })
 }
 
-pub fn render_login_form(errors: &ValidationErrors) -> Markup {
-    render_page("Login", html! {
+pub fn render_login_form(navbar_info: &NavbarInfo, errors: &ValidationErrors) -> Markup {
+    render_page("Login", navbar_info,html! {
         form.form-group method="POST" action="/login" {
             (render_input("Username", "username", "text", errors))
             (render_input("Password", "password", "password", errors))
