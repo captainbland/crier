@@ -6,3 +6,32 @@ table! {
         email -> Varchar,
     }
 }
+
+table! {
+    payer (id) {
+        id -> Int4,
+        crier_user_id -> Int4,
+        service_customer_id -> Nullable<Varchar>,
+        service_payment_source -> Varchar,
+    }
+}
+
+table! {
+    seller (id) {
+        id -> Int4,
+        crier_user_id -> Int4,
+        access_token -> Varchar,
+        refresh_token -> Nullable<Varchar>,
+        publishable_key -> Nullable<Varchar>,
+        service_id -> Varchar,
+    }
+}
+
+joinable!(payer -> crier_user (crier_user_id));
+joinable!(seller -> crier_user (crier_user_id));
+
+allow_tables_to_appear_in_same_query!(
+    crier_user,
+    payer,
+    seller,
+);

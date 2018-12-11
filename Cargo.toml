@@ -16,6 +16,7 @@ urlencoded = "*"
 serde = "*"
 serde_derive = "*"
 serde_urlencoded = "*"
+serde_json = "*"
 plugin = "*"
 
 diesel = { version = "1.0.0", features = ["postgres", "r2d2"] }
@@ -32,8 +33,13 @@ regex = "1"
 bcrypt="*"
 redis = "*"
 iron-sessionstorage = { git="https://github.com/iron/iron-sessionstorage", features = ["redis-backend"] }
+stripe-rust="*"
+reqwest = "0.9.5"
+params = "*"
+futures = "0.1"
+
 [dependencies.maud]
-git = "https://github.com/captainbland/maud"
+version = "0.19"
 features = ["iron"]
 
 [dependencies.logger]

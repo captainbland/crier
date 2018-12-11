@@ -1,14 +1,16 @@
-use r2d2::PooledConnection;
-use diesel::r2d2::ConnectionManager;
-use diesel::pg::PgConnection;
-
-use diesel::prelude::*;
-use diesel::result::{Error, DatabaseErrorKind, DatabaseErrorKind::*, DatabaseErrorInformation};
-use diesel::insert_into;
-use schema::crier_user;
 use bcrypt::verify;
-use user_model::{RegisterForm, UserCreation, User, LoginForm, LoginQuery};
+use diesel::{
+    insert_into,
+    pg::PgConnection,
+    prelude::*,
+    r2d2::ConnectionManager,
+    result::{DatabaseErrorInformation, DatabaseErrorKind, DatabaseErrorKind::*, Error}
+};
 use iron_sessionstorage::Session;
+use r2d2::PooledConnection;
+
+use schema::crier_user;
+use user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
 use user_model::UserSession;
 
 pub struct UserService;
@@ -52,6 +54,14 @@ impl UserService {
 
         return user;
 
+    }
+
+    pub fn get_user_from_session(&self, user_session: &UserSession, conn: &PooledConnection<ConnectionManager<PgConnection>>) -> Result<User, String> {
+        use schema::crier_user::dsl::*;
+        crier_user.filter(username.eq(user_session.username.clone())).limit(1)
+            .load::<User>(conn)
+            .map(|vec| vec.clone().pop().ok_or(format!("There was no user {}", user_session.username)))
+            .unwrap_or(Err(String::from("Could not load user")))
     }
 
     fn handle_insert_error(register_form: &RegisterForm, e: Error) -> Result<usize, String> {

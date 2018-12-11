@@ -17,7 +17,6 @@ pub struct RegisterForm {
     #[validate(length(min=2, max=32, message="Username must be between 2 and 32 characters long"))]
     pub username: String,
 
-
     #[validate(custom="password", length(min=7, message="Password must be 7 characters or over"))]
     pub password: String,
     #[validate(must_match="password")]

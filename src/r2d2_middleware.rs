@@ -1,20 +1,19 @@
-use diesel::r2d2::*;
-use r2d2::Pool;
-use diesel::pg::PgConnection;
-use dotenv::*;
-use std::env;
 use std::any::Any;
-use std::sync::Arc;
 use std::borrow::Cow;
-use plugin::*;
-use iron::{Request, Response, IronResult,
-    middleware::{
-        BeforeMiddleware,
-    },
-    typemap::Key,
-    request::*
-};
+use std::env;
+use std::sync::Arc;
 
+use diesel::pg::PgConnection;
+use diesel::r2d2::*;
+use dotenv::*;
+use iron::{IronResult, middleware::{
+        BeforeMiddleware,
+    }, Request,
+       Response,
+       typemap::Key
+};
+use plugin::*;
+use r2d2::Pool;
 
 pub struct R2D2Middleware {
     pool: Arc<Pool<ConnectionManager<PgConnection>>>
@@ -22,7 +21,6 @@ pub struct R2D2Middleware {
 
 impl R2D2Middleware {
     pub fn new() -> R2D2Middleware {
-        dotenv().ok();
         let database_url = env::var("DATABASE_URL")
             .expect("DATABASE_URL must be set");
         let manager = ConnectionManager::<PgConnection>::new(database_url);
