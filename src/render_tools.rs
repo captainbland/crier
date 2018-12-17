@@ -31,9 +31,29 @@ pub fn navbar(navbar_info: &NavbarInfo) -> Markup {
                     li class="nav-item" {
                         a class="nav-link" href="/login" { "Log in" }
                     }
+
+                    li class="nav-item" {
+                        a class="nav-link" href="/register" { "Register" }
+                    }
                 } @else {
                     li class="nav-item" {
                         form method="POST" action="/logout" { input type="submit" value="logout" {} }
+                    }
+                }
+
+                @if !navbar_info.is_seller && navbar_info.logged_in {
+                    li class="nav-item" {
+                        a class="nav-link" href="/stripe/onboarding_url" {"Onboard as a seller with Stripe"}
+                    }
+                } @else if navbar_info.is_seller {
+                    li class="nav-item" {
+                        a class="nav-link" href="/create_listing" {"Create listing"}
+                    }
+                }
+
+                @if !navbar_info.is_payer && navbar_info.logged_in {
+                    li class="nav-item" {
+                        a class = "nav-link" href="/stripe/payer_signup" {"Signup to pay with us"}
                     }
                 }
             }
@@ -74,6 +94,7 @@ pub fn render_input(label: &str, name: &str, input_type: &str, errors: &Validati
             br;
             input.form-control.is-invalid[is_error_for(errors, name)] type=(input_type) name=(name) id=(name);
             (cat_errors_for_field(errors, name));
+            br;
         }
     }
 }

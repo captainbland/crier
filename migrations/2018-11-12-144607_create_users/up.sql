@@ -20,4 +20,13 @@ CREATE TABLE payer (
   crier_user_id INT4 NOT NULL REFERENCES crier_user(id),
   service_customer_id VARCHAR DEFAULT NULL UNIQUE,
   service_payment_source VARCHAR NOT NULL UNIQUE
-)
+);
+
+CREATE TABLE listing (
+  id SERIAL PRIMARY KEY UNIQUE,
+  seller_id INT4 NOT NULL REFERENCES seller(id),
+  price INT4 NOT NULL,
+  currency VARCHAR(3) NOT NULL,
+  amount INT4 DEFAULT NULL,
+  limited_amount BOOLEAN DEFAULT FALSE
+);

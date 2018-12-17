@@ -16,7 +16,19 @@ pub fn render_payer_signup_form(navbar_info: &NavbarInfo, errors: &ValidationErr
             span {("Card")}
             br{}
             div id="card-element" {}
-            input.btn.btn-primary type=("submit") value="Register";
+            input.btn.btn-primary type=("submit") value="Pay with us";
         }
     }, vec!["https://js.stripe.com/v3/", "/static/js/create_stripe_source.js"])
+}
+
+pub fn render_create_listing_form(navbar_info: &NavbarInfo,  errors: &ValidationErrors) -> Markup {
+    render_page("Create listing", navbar_info,html!{
+        form.form-group method="POST" action="/create_listing" {
+            (render_input("Title", "title", "text", errors))
+            (render_input("Amount", "amount", "number", errors)) //FIXME: make this adjustable by step, extra attributes, etc.
+            (render_input("Quantity", "quantity", "number", errors))
+            input.btn.btn-primary type=("submit") value="Register";
+        }
+    })
+
 }

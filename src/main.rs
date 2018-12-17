@@ -76,6 +76,8 @@ pub mod seller_model;
 pub mod render_tools;
 pub mod stripe_view;
 pub mod payer_model;
+pub mod type_wrappers;
+pub mod listing_model;
 
 mod schema;
 

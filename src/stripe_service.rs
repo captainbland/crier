@@ -16,9 +16,15 @@ use url::Url;
 use user_model::UserSession;
 
 use seller_model::*;
+use payer_model::*;
 use user_service::UserService;
 use diesel::insert_into;
-
+use payer_model::PayerForm;
+use std::str::FromStr;
+use stripe::Error;
+use user_model::User;
+use type_wrappers::{DBConnection, Session};
+use listing_model::*;
 
 pub struct StripeService {
     pub publishable_key: String,
@@ -36,7 +42,7 @@ impl StripeService {
         StripeService {publishable_key, secret_key, client, user_service}
     }
 
-    pub fn onboard_seller(&self, con: PooledConnection<ConnectionManager<PgConnection>>, code: &str, user_session: &UserSession) -> std::result::Result<usize, String> {
+    pub fn onboard_seller(&self, con: DBConnection, code: &str, user_session: &UserSession, session: &mut Session) -> std::result::Result<i32, String> {
 
         let url = "https://connect.stripe.com/oauth/token";
 
@@ -76,17 +82,75 @@ impl StripeService {
                 };
 
 
-                insert_into(seller)
+                let val = insert_into(seller)
                     .values(seller_entry)
-                    .execute(&con)
+                    .returning(id)
+                    .get_results(&con)
                     .map_err(|e| {
                         println!("WARN: there was an error inserting seller information {:?}", e);
                         format!("Could not insert seller information: {:?}", e)
-                    })
+                    }).map(|v| v.clone().pop());
 
+                match val {
+                    Ok(Some(value)) => {
+                        let mut user_session_update = user_session.clone();
+                        user_session_update.seller_id = Some(value);
+                        session.set(user_session_update);
+                        Ok(value)
+                    }
+                    _ => Err(String::from("Could not create seller"))
+                }
             },
 
             _ => Err(String::from(""))
         }
+    }
+
+    pub fn onboard_payer(&self, con: DBConnection, payer_form: PayerForm, user_session: UserSession, session: &mut Session) -> std::result::Result<i32, String>  {
+        use schema::payer::dsl::*;
+
+        let mut customer_params = CustomerParams::default();
+        let mut payment_source_params = PaymentSourceParams::Source(SourceId::from_str(payer_form.stripeSource.as_ref()).unwrap());
+        customer_params.source = Some(payment_source_params);
+        let customer_params_description = "A customer of some description";
+        customer_params.description = Some(customer_params_description);
+        let client = stripe::Client::new(self.secret_key.as_ref());
+        stripe::Customer::create(&client, customer_params).and_then(|cust| {
+            let user = self.user_service.get_user_from_session(&user_session, &con).unwrap();
+
+            let payer_entry = PayerEntry {
+                crier_user_id: user.id,
+                service_customer_id: cust.id.clone(),
+                service_payment_source: payer_form.stripeSource
+            };
+
+            println!("Customer created: {:?}", cust.clone());
+            Ok((cust, payer_entry, payer))
+        }).map(|args| {
+
+            let (cust, payer_entry, payer) = args;
+            let returned = insert_into(payer)
+                .values(payer_entry)
+                .returning(id)
+                .get_results(&con)
+                .map_err(|e| {
+                    println!("WARN: there was an error inserting seller information {:?}", e);
+                    format!("Could not insert seller information: {:?}", e)
+                }).map(|v| v.clone().pop());
+
+            match returned {
+                Ok(Some(payer_id)) => {
+                    let mut user_session_update = user_session.clone();
+                    user_session_update.payer_id = Some(payer_id);
+                    session.set(user_session_update);
+                    Ok(payer_id)
+                }
+                _ => Err(String::from("Cannot get payerId"))
+            }
+        }).unwrap_or_else(|e|Err(format!("There was a problem creating a customer with stripe: {:?}", e)))
+    }
+
+    pub fn create_listing(&self, listing_form: &ListingForm) {
+
     }
 }

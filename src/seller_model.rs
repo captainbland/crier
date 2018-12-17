@@ -11,7 +11,7 @@ use user_model::User;
 use schema::*;
 
 
-#[derive(Insertable)]
+#[derive(Insertable, Queryable)]
 #[table_name="seller"]
 pub struct SellerCreation {
     pub crier_user_id: i32,

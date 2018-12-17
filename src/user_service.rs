@@ -12,6 +12,7 @@ use r2d2::PooledConnection;
 use schema::crier_user;
 use user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
 use user_model::UserSession;
+use seller_model::SellerCreation;
 
 pub struct UserService;
 
@@ -20,7 +21,7 @@ impl UserService {
         UserService {}
     }
 
-    pub fn create_user(&self, conn: PooledConnection<ConnectionManager<PgConnection>>, register_form: &RegisterForm) -> Result<usize, String> {
+    pub fn create_user(&self, conn: PooledConnection<ConnectionManager<PgConnection>>, register_form: &RegisterForm, session: &mut Session) -> Result<usize, String> {
         use schema::crier_user::dsl::*;
 
         let create_user: UserCreation = register_form.into();
@@ -28,7 +29,10 @@ impl UserService {
         match insert_into(crier_user)
             .values(create_user)
             .execute(&conn) {
-                Ok(res) => Ok(res),
+                Ok(res) => {
+                    session.set(UserSession {username: register_form.username.clone(), payer_id: None, seller_id: None });
+                    Ok(res)
+                },
                 Err(e) => UserService::handle_insert_error(register_form, e)
             }
     }
@@ -37,12 +41,28 @@ impl UserService {
         use schema::crier_user::dsl::*;
 
         let login_query:LoginQuery = login_form.into();
-        let user: Result<User, String> = match crier_user.filter(username.eq(&login_query.username)).limit(1).load::<User>(&conn) {
+
+        let user_query = crier_user
+            .filter(username.eq(&login_query.username))
+            .distinct();
+
+        let user: Result<User, String> = match user_query.load::<User>(&conn) {
             Ok(res) => res.clone().pop()
                 .and_then(|u| {
-                    match verify(&login_form.password[..], &u.password[..]) {
+                    match verify(login_form.password.as_str(), u.password.as_str()) {
                         Ok(true) => {
-                            session.set(UserSession {username: login_query.username.clone() });
+                            let user_seller: Option<i32>;
+                            {
+                                use schema::seller::dsl::*;
+                                user_seller = seller.select(id).filter(crier_user_id.eq(u.id)).distinct().load::<i32>(&conn).map(|s| s.clone().pop()).ok().unwrap_or(None);
+                            }
+                            let user_payer: Option<i32>;
+                            {
+                                use schema::payer::dsl::*;
+                                user_payer = payer.select(id).filter(crier_user_id.eq(u.id)).distinct().load::<i32>(&conn).map(|s| s.clone().pop()).ok().unwrap_or(None);
+                            }
+                            session.set(UserSession {username: login_query.username.clone(), seller_id: user_seller, payer_id: user_payer });
+
                             Some(Ok(u))
                         },
                         _ => Some(Err(String::from("Could not log you in")))
@@ -85,5 +105,11 @@ impl UserService {
                 Err(String::from("There was a problem processing your registration. Please try again later"))
             }
         }
+    }
+
+
+    pub fn get_integrations_for_user(&self, con: PooledConnection<ConnectionManager<PgConnection>>, user: User) {
+        use schema::payer::dsl::*;
+
     }
 }

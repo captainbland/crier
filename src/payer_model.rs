@@ -1,4 +1,3 @@
-use serde_urlencoded::*;
 use serde_derive::*;
 
 use validator::*;
@@ -13,15 +12,23 @@ use schema::*;
 #[derive(Deserialize, PartialEq, Eq, Debug, Validate)]
 pub struct PayerForm {
     #[validate(length(min=2, max=128, message="Stripe source must be submitted"))]
-    stripeSource: String,
+    pub stripeSource: String,
     #[validate(length(min=2, max=128, message="Name must be between 2 and 128 characters long"))]
-    name: String,
+    pub name: String,
     #[validate(length(min=2, max=256, message="Address line must be between 2 and 256 characters long"))]
-    addressLine1: String,
+    pub addressLine1: String,
     #[validate(length(min=2, max=256, message="City must be between 2 and 256 characters long"))]
-    city: String,
+    pub city: String,
     #[validate(length(min=2, max=2, message="Country must be 2 characters long"))]
-    country: String,
+    pub country: String,
     #[validate(email)]
-    email: String
+    pub email: String
+}
+
+#[derive(Insertable, Queryable)]
+#[table_name="payer"]
+pub struct PayerEntry {
+    pub crier_user_id: i32,
+    pub service_customer_id: String,
+    pub service_payment_source: String
 }

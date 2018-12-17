@@ -22,7 +22,15 @@ pub fn render_login_form(navbar_info: &NavbarInfo, errors: &ValidationErrors) ->
         form.form-group method="POST" action="/login" {
             (render_input("Username", "username", "text", errors))
             (render_input("Password", "password", "password", errors))
-            input.btn.btn-primary type=("submit") value="Register";
+            input.btn.btn-primary type=("submit") value="Log in";
         }
+    })
+}
+
+pub fn render_post_registration_page(navbar_info: &NavbarInfo) -> Markup {
+    render_page("You have registered successfully", navbar_info, html!{
+        p{("Now would you like to: ")}
+        p {a href="/stripe/payer_signup" {("Make payments")} }
+        p {a href="/stripe/onboarding_url" {("Take payments with Stripe")} }
     })
 }
