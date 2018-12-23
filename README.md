@@ -9,6 +9,8 @@ To compile, you'll need to install libssl so that things can communicate over ht
 
 You will need to install PostgreSQL, Redis and have a sandbox Stripe account in order to run this application. 
 
+To set up the database, you'll need to install the Diesel command line tool and run diesel migration setup from the root directory of this repository. This will have Diesel connect to the database, run the database migrations and update the src/schema.rs file.
+
 The following environment variables should be set, these can also be picked up from a .env file automatically:
 
 DATABASE_URL - this should look something like postgres://user:password@127.0.0.1/crier
