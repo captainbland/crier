@@ -5,6 +5,8 @@ Primarily a learning project. It has lots of dependencies (check cargo.toml) but
 
 ## Requirements
 
+To compile, you'll need to install libssl so that things can communicate over https.
+
 You will need to install PostgreSQL, Redis and have a sandbox Stripe account in order to run this application. 
 
 The following environment variables should be set, these can also be picked up from a .env file automatically:
