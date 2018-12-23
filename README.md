@@ -1,6 +1,8 @@
 # crier
 Rust web service for handling QR-code based payments through Stripe. Heavy WIP one-coder hobbyist job, not production ready but may be interesting if you want to see how to put together a Rust web app or are some kind of recruiter I suppose.
 
+Primarily a learning project. It has lots of dependencies (check cargo.toml) but most heavily depends on Iron (web/http framework), Maud (html templating with neat DSLs - look at any file with "render" in the name to see how this is used) and Diesel (an ORM).
+
 ## Requirements
 
 You will need to install PostgreSQL, Redis and have a sandbox Stripe account in order to run this application. 
