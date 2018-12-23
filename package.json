@@ -5,6 +5,7 @@
   "author": "Captain Bland <lightnix@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "bootstrap": "4"
+    "bootstrap": "4",
+    "jquery": "^3.3.1"
   }
 }

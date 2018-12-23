@@ -8,6 +8,18 @@ table! {
 }
 
 table! {
+    listing (id) {
+        id -> Int4,
+        seller_id -> Int4,
+        title -> Varchar,
+        cost -> Int4,
+        currency -> Varchar,
+        amount -> Nullable<Int4>,
+        limited_amount -> Nullable<Bool>,
+    }
+}
+
+table! {
     payer (id) {
         id -> Int4,
         crier_user_id -> Int4,
@@ -27,11 +39,13 @@ table! {
     }
 }
 
+joinable!(listing -> seller (seller_id));
 joinable!(payer -> crier_user (crier_user_id));
 joinable!(seller -> crier_user (crier_user_id));
 
 allow_tables_to_appear_in_same_query!(
     crier_user,
+    listing,
     payer,
     seller,
 );

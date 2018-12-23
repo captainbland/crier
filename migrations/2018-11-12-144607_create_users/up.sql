@@ -25,7 +25,8 @@ CREATE TABLE payer (
 CREATE TABLE listing (
   id SERIAL PRIMARY KEY UNIQUE,
   seller_id INT4 NOT NULL REFERENCES seller(id),
-  price INT4 NOT NULL,
+  title VARCHAR NOT NULL,
+  cost INT4 NOT NULL,
   currency VARCHAR(3) NOT NULL,
   amount INT4 DEFAULT NULL,
   limited_amount BOOLEAN DEFAULT FALSE

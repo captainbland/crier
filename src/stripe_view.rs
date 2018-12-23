@@ -25,8 +25,9 @@ pub fn render_create_listing_form(navbar_info: &NavbarInfo,  errors: &Validation
     render_page("Create listing", navbar_info,html!{
         form.form-group method="POST" action="/create_listing" {
             (render_input("Title", "title", "text", errors))
-            (render_input("Amount", "amount", "number", errors)) //FIXME: make this adjustable by step, extra attributes, etc.
+            (render_currency_input("Amount", "amount", errors))
             (render_input("Quantity", "quantity", "number", errors))
+            (render_input("Currency", "currency", "text", errors))
             input.btn.btn-primary type=("submit") value="Register";
         }
     })

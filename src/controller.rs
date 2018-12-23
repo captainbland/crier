@@ -74,6 +74,16 @@ mod controller_macros {
         }
       }
     }
+
+    macro_rules! assert_seller {
+        ($user_session:expr, $navbar_info:expr) => {
+            if $user_session.seller_id.is_none() {
+               return Ok(Response::with((status::Unauthorized, render_page("You must be a seller to create listings", $navbar_info, html!{}))))
+            } else {
+                $user_session.seller_id.unwrap()
+            }
+        }
+    }
 }
 
 fn index(req: &mut Request) -> IronResult<Response> {
@@ -274,27 +284,34 @@ fn post_stripe_payer_signup_form(req: &mut Request) -> IronResult<Response> {
 
 fn get_create_listing_form(req: &mut Request) -> IronResult<Response> {
     let navbar_info = &calculate_navbar_info(req.session());
-    let user_session = assert_login!(req.session(), navbar_info);
+    let user_session = assert_login!(req.session(), navbar_info).unwrap();
+    assert_seller!(user_session, navbar_info);
     Ok(Response::with((iron::status::Ok, render_create_listing_form(navbar_info, &ValidationErrors::new()))))
 }
 
 fn post_create_listing_form(req: &mut Request) -> IronResult<Response> {
+    println!("Create listing");
     let stripe_service = StripeService::new();
     let mut navbar_info;
     { navbar_info =  calculate_navbar_info(req.session()); }
     let user_session;
-    { user_session = assert_login!(req.session(), &navbar_info).unwrap(); }
-    let listing_form: ListingForm = itry!(serde_urlencoded::from_reader(req.body.by_ref()));
-    match(listing_form.validate()) {
-        Ok(_) => {
+    let seller_id;
+    {
+        user_session = assert_login!(req.session(), &navbar_info).unwrap();
+        seller_id = assert_seller!(user_session, &navbar_info)
+    }
 
+    let listing_form: ListingForm = itry!(serde_urlencoded::from_reader(req.body.by_ref()));
+    match listing_form.validate() {
+        Ok(_) => {
+            with_connection!(req, |con| Some(stripe_service.create_listing(con, listing_form)))
+                .map(|val| Ok(Response::with((iron::status::Ok, render_page("You have created a listing!", &navbar_info, html!{})))))
+                .unwrap_or(Ok(Response::with((iron::status::InternalServerError, render_page("Could not create listing", &navbar_info, html!{})))))
         }
         Err(e) => {
             Ok(Response::with((status::BadRequest, render_create_listing_form(&navbar_info, &e))))
-
         }
     }
-
 }
 
 pub fn get_router() -> Router {
@@ -310,6 +327,7 @@ pub fn get_router() -> Router {
         stripe_redirect: get "/stripe/onboarding_redirect" => get_on_stripe_redirect,
         stripe_payee_form: get "/stripe/payer_signup" => get_stripe_payer_signup_form,
         stripe_payee_form: post "/stripe/payer_signup" => post_stripe_payer_signup_form,
-        stripe_create_listing_form: get "/create_listing" => get_stripe_create_listing_form
+        create_listing_form: get "/create_listing" => get_create_listing_form,
+        create_listing_form: post "/create_listing" => post_create_listing_form
     )
 }

@@ -9,14 +9,14 @@ fn header(page_title: &str) -> Markup {
         (DOCTYPE)
         html {
             meta charset="utf-8";
-            link rel="stylesheet" type="text/css" href="/static/css/bootstrap.css";
+            link rel="stylesheet" type="text/css" href="/static/thirdparty/css/bootstrap.css";
             title { (page_title) }
         }
     }
 }
 
 pub fn footer() -> Markup {
-    let pre_escaped = "<script src=\"/static/js/bootstrap.js\"></script>";
+    let pre_escaped = "<script src=\"/static/thirdparty/js/bootstrap.js\"></script><script src=\"/static/thirdparty/js/jquery.min.js\"></script><script src=\"static/js/inputs.js\"></script>";
     html! { (PreEscaped(pre_escaped)) }
 }
 
@@ -93,6 +93,18 @@ pub fn render_input(label: &str, name: &str, input_type: &str, errors: &Validati
             label for=(name) { (label) }
             br;
             input.form-control.is-invalid[is_error_for(errors, name)] type=(input_type) name=(name) id=(name);
+            (cat_errors_for_field(errors, name));
+            br;
+        }
+    }
+}
+
+pub fn render_currency_input(label: &str, name: &str, errors: &ValidationErrors) -> Markup {
+    html!{
+        div {
+            label for=(name) { (label) }
+            br;
+            input.form-control.currency.is-invalid[is_error_for(errors, name)] type=("number") step=("0.01") min=("1.00") max=("5000.00") name=(name) id=(name);
             (cat_errors_for_field(errors, name));
             br;
         }

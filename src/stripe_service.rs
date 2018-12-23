@@ -150,7 +150,20 @@ impl StripeService {
         }).unwrap_or_else(|e|Err(format!("There was a problem creating a customer with stripe: {:?}", e)))
     }
 
-    pub fn create_listing(&self, listing_form: &ListingForm) {
+    pub fn create_listing(&self, con: DBConnection, listing_form: ListingForm) -> Result<i32, String> {
+        use schema::listing::dsl::*;
+        let listing_creation: Listing = listing_form.into();
 
+        let ret = insert_into(listing)
+            .values(listing_creation)
+            .returning(id)
+            .get_results::<i32>(&con)
+            .map_err(|e| {
+                println!("WARN: there was a database error creating listing from form: {:?}", e);
+                format!("There was a problem creating listing information")
+            }).map(|v| v.clone().pop().unwrap());
+            //.unwrap_or_else(|e| Err(format!("There was a problem creating a listing: {:?}", e)));
+
+        ret
     }
 }
