@@ -1,4 +1,4 @@
-use iron_sessionstorage::*;
+use type_wrappers::*;
 use user_model::UserSession;
 use iron::IronResult;
 

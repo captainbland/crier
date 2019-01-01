@@ -12,7 +12,7 @@ pub fn render_registration_form(navbar_info: &NavbarInfo, errors: &ValidationErr
             (render_input("Password", "password", "password", errors))
             (render_input("Repeat your password", "password2", "password", errors))
             (render_input("Email", "email", "text", errors))
-            input.btn.btn-primary type=("submit") value="Register";
+            input.btn.btn-primary type=("submit") id="submit" value="Register";
         }
     })
 }
@@ -22,7 +22,7 @@ pub fn render_login_form(navbar_info: &NavbarInfo, errors: &ValidationErrors) ->
         form.form-group method="POST" action="/login" {
             (render_input("Username", "username", "text", errors))
             (render_input("Password", "password", "password", errors))
-            input.btn.btn-primary type=("submit") value="Log in";
+            input.btn.btn-primary type=("submit") id="submit" value="Log in";
         }
     })
 }

@@ -13,10 +13,10 @@ use schema::crier_user;
 use iron_sessionstorage::Value;
 
 #[cfg(feature="debug")]
-const BLOWFISH_COST: u32 = 4;
+static BLOWFISH_COST: u32 = 4;
 
 #[cfg(not(feature="debug"))]
-const BLOWFISH_COST: u32 = DEFAULT_COST;
+static BLOWFISH_COST: u32 = DEFAULT_COST;
 
 
 #[derive(Deserialize, PartialEq, Eq, Debug, Validate)]
@@ -34,15 +34,24 @@ pub struct RegisterForm {
 
 
 fn password(password: &str) -> Result<(), ValidationError> {
-    let re_vec = vec![r"[a-z]",r"[A-Z]",r"[0-9]",r"[:punct:]"];
+    let re_vec = vec![r"[a-z]+",r"[A-Z]+",r"[0-9]+",r"[[:punct:]]+"];
 
+    let matches = re_vec.iter().filter(|rexp| Regex::new(rexp)
+        .map(|re| {
+            let is_match = re.is_match(password);
+            println!("password {} is match for re {}: {}", password, re, is_match);
+            is_match
+        })
+        .map_err(|e| println!("{}", e))
+        .unwrap_or(false)).count();
     // count instances of the required character types
-    if re_vec.iter().filter(|rexp| Regex::new(rexp).map(|re| re.is_match(password)).unwrap_or(false)).count() == re_vec.len() {
+    if matches == re_vec.len() {
         return Ok(());
     }
 
     let mut error = ValidationError::new("password");
     error.message = Some(Cow::Owned(String::from("Password should contain a lower case, an upper case, a number and a punctuation character")));
+    println!("Passed validations for failure: {}", matches);
     Err(error)
 }
 

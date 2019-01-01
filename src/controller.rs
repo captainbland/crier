@@ -15,10 +15,11 @@ use iron::{
 };
 use iron_sessionstorage::{
     backends::*,
-    Session,
     SessionStorage,
     traits::*
 };
+
+use type_wrappers::*;
 use logger::Logger;
 use maud::*;
 use mount::Mount;
@@ -38,12 +39,7 @@ use qr_service::*;
 use qr_view::*;
 use r2d2_middleware::*;
 use stripe_service::*;
-use stripe_service::StripeService;
 use user_model::*;
-use user_model::*;
-use user_model::LoginForm;
-use user_model::RegisterForm;
-use user_model::UserSession;
 use user_service::*;
 use user_view::*;
 use stripe_view::*;
@@ -105,9 +101,10 @@ fn get_qr(req: &mut Request) -> IronResult<Response> {
 
 
 fn post_register(req: &mut Request) -> IronResult<Response> {
+    println!("Post register");
     let user_form: RegisterForm = itry!(serde_urlencoded::from_reader(req.body.by_ref()));
     println!("{:?}", user_form);
-    let user_service = UserService::new();
+    let user_service = UserService::<UserDAOImpl>::new();
     let response: String = String::from("");
     let navbar_info = &calculate_navbar_info(req.session());
 
@@ -166,7 +163,7 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
     }
 
 
-    let user_service = UserService::new();
+    let user_service = UserService::<UserDAOImpl>::new();
     let mut response: String = String::from("");
     match user_form.validate() {
         Ok(_) => {

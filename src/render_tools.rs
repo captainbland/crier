@@ -29,31 +29,31 @@ pub fn navbar(navbar_info: &NavbarInfo) -> Markup {
                 }
                 @if navbar_info.logged_in == false {
                     li class="nav-item" {
-                        a class="nav-link" href="/login" { "Log in" }
+                        a class="nav-link" id="nav_login" href="/login" { "Log in" }
                     }
 
                     li class="nav-item" {
-                        a class="nav-link" href="/register" { "Register" }
+                        a class="nav-link" id="nav_register" href="/register" { "Register" }
                     }
                 } @else {
                     li class="nav-item" {
-                        form method="POST" action="/logout" { input type="submit" value="logout" {} }
+                        form method="POST" action="/logout" { input type="submit" id="nav_logout" value="logout" {} }
                     }
                 }
 
                 @if !navbar_info.is_seller && navbar_info.logged_in {
                     li class="nav-item" {
-                        a class="nav-link" href="/stripe/onboarding_url" {"Onboard as a seller with Stripe"}
+                        a class="nav-link" id="nav_onboard_seller" href="/stripe/onboarding_url" {"Onboard as a seller with Stripe"}
                     }
                 } @else if navbar_info.is_seller {
                     li class="nav-item" {
-                        a class="nav-link" href="/create_listing" {"Create listing"}
+                        a class="nav-link" id="nav_create_listing" href="/create_listing" {"Create listing"}
                     }
                 }
 
                 @if !navbar_info.is_payer && navbar_info.logged_in {
                     li class="nav-item" {
-                        a class = "nav-link" href="/stripe/payer_signup" {"Signup to pay with us"}
+                        a class = "nav-link" id="nav_onboard_payer" href="/stripe/payer_signup" {"Signup to pay with us"}
                     }
                 }
             }

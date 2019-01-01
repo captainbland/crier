@@ -12,7 +12,6 @@ use r2d2::PooledConnection;
 use reqwest::*;
 use serde_json;
 use stripe::*;
-use url::Url;
 use user_model::UserSession;
 
 use seller_model::*;
@@ -25,12 +24,13 @@ use stripe::Error;
 use user_model::User;
 use type_wrappers::{DBConnection, Session};
 use listing_model::*;
+use user_service::UserDAOImpl;
 
 pub struct StripeService {
     pub publishable_key: String,
     pub secret_key: String,
     pub client: reqwest::Client,
-    pub user_service: UserService
+    pub user_service: UserService<UserDAOImpl>
 }
 
 impl StripeService {

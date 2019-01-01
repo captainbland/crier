@@ -1,7 +1,6 @@
 #![feature(plugin)]
 #![feature(proc_macro_hygiene)]
 #![feature(extern_prelude)]
-
 extern crate bcrypt;
 extern crate core;
 #[macro_use]
@@ -33,36 +32,11 @@ extern crate urlencoded;
 extern crate validator;
 #[macro_use]
 extern crate validator_derive;
+#[macro_use]
+extern crate mock_derive;
 
-use core::borrow::BorrowMut;
-use std::env;
-use std::io::Read;
-use std::path::Path;
-use std::string::String;
 
-use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use dotenv::*;
-use iron::*;
-use iron::modifiers::Redirect;
-use iron::prelude::*;
-use iron::status;
-use iron_sessionstorage::backends::*;
-use iron_sessionstorage::Session;
-use iron_sessionstorage::SessionStorage;
-use iron_sessionstorage::traits::*;
-use logger::Logger;
-use maud::*;
-use mount::Mount;
-use params::{Params, Value};
-use router::Router;
-use router::Params as RouterParams;
-use serde_urlencoded::*;
-use staticfile::Static;
-use urlencoded::UrlEncodedQuery;
-use validator::*;
-
-use controller::*;
+use application::run;
 
 pub mod index_view;
 pub mod user_view;
@@ -79,31 +53,13 @@ pub mod payer_model;
 pub mod type_wrappers;
 pub mod listing_model;
 
-mod schema;
+pub mod schema;
 
-mod r2d2_middleware;
-mod navbar_info;
+pub mod r2d2_middleware;
+pub mod navbar_info;
 
-fn main() {
-    dotenv().ok();
+pub mod application;
 
-    let router = controller::get_router();
-
-    let mut mount = Mount::new();
-    mount.mount("/", router)
-         .mount("/static/", Static::new(Path::new("static")));
-
-
-    let (logger_before, logger_after) = Logger::new(None);
-    let connection_pool_middleware = r2d2_middleware::R2D2Middleware::new();
-    let mut chain = Chain::new(mount);
-    chain.link_before(connection_pool_middleware);
-    let my_secret = b"verysecret".to_vec();
-    let redis_url = env::var("REDIS_URL").unwrap();
-    chain.link_around(SessionStorage::new(RedisBackend::new(redis_url.as_str()).unwrap()));
-    chain.link_before(logger_before);
-    chain.link_after(logger_after);
-
-
-    Iron::new(chain).http("localhost:3000").unwrap();
+pub fn main() {
+    run();
 }
