@@ -70,7 +70,7 @@ impl <T: UserDAO + Default> UserService<T> {
                     }
                 })
                 .unwrap_or(Err(String::from("Could not log you in"))),
-            Err(e) => Err(String::from("User details not found"))
+            Err(_e) => Err(String::from("User details not found"))
         };
 
         return user;
@@ -109,7 +109,7 @@ impl <T: UserDAO + Default> UserService<T> {
     }
 
 
-    pub fn get_integrations_for_user(&self, con: PooledConnection<ConnectionManager<PgConnection>>, user: User) {
+    pub fn get_integrations_for_user(&self, _con: PooledConnection<ConnectionManager<PgConnection>>, _user: User) {
         use schema::payer::dsl::*;
 
     }

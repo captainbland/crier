@@ -45,7 +45,7 @@ pub fn run() {
     let connection_pool_middleware = r2d2_middleware::R2D2Middleware::new();
     let mut chain = Chain::new(mount);
     chain.link_before(connection_pool_middleware);
-    let my_secret = b"verysecret".to_vec();
+    let _my_secret = b"verysecret".to_vec();
     let redis_url = env::var("REDIS_URL").unwrap();
     chain.link_around(SessionStorage::new(RedisBackend::new(redis_url.as_str()).unwrap()));
     chain.link_before(logger_before);

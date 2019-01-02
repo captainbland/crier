@@ -110,7 +110,7 @@ impl StripeService {
         use schema::payer::dsl::*;
 
         let mut customer_params = CustomerParams::default();
-        let mut payment_source_params = PaymentSourceParams::Source(SourceId::from_str(payer_form.stripeSource.as_ref()).unwrap());
+        let payment_source_params = PaymentSourceParams::Source(SourceId::from_str(payer_form.stripeSource.as_ref()).unwrap());
         customer_params.source = Some(payment_source_params);
         let customer_params_description = "A customer of some description";
         customer_params.description = Some(customer_params_description);
@@ -128,7 +128,7 @@ impl StripeService {
             Ok((cust, payer_entry, payer))
         }).map(|args| {
 
-            let (cust, payer_entry, payer) = args;
+            let (_cust, payer_entry, payer) = args;
             let returned = insert_into(payer)
                 .values(payer_entry)
                 .returning(id)

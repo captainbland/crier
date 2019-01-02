@@ -105,7 +105,7 @@ fn post_register(req: &mut Request) -> IronResult<Response> {
     let user_form: RegisterForm = itry!(serde_urlencoded::from_reader(req.body.by_ref()));
     println!("{:?}", user_form);
     let user_service = UserService::<UserDAOImpl>::new();
-    let response: String = String::from("");
+    let _response: String = String::from("");
     let navbar_info = &calculate_navbar_info(req.session());
 
     match user_form.validate() {
@@ -116,7 +116,7 @@ fn post_register(req: &mut Request) -> IronResult<Response> {
                 .and_then(|con| {
                     let insert_res = user_service.create_user(con, &user_form, req.session());
                     let result = match insert_res {
-                        Ok(res) => (Ok(Response::with((status::Ok, render_post_registration_page(navbar_info))))),
+                        Ok(_res) => (Ok(Response::with((status::Ok, render_post_registration_page(navbar_info))))),
                         Err(e) => Ok(Response::with((status::BadRequest, render_page("There was a problem registering...", navbar_info,html!{(e.to_string())}))))
                     };
                     Some(result)
@@ -164,7 +164,7 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
 
 
     let user_service = UserService::<UserDAOImpl>::new();
-    let mut response: String = String::from("");
+    let _response: String = String::from("");
     match user_form.validate() {
         Ok(_) => {
 
@@ -173,11 +173,11 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
                 .and_then(|res| res.ok() )
                 .and_then(|con| {
 
-                    let mut session: &mut Session = req.session();
+                    let session: &mut Session = req.session();
 
                     let user_res = user_service.login(con, &user_form, session);
                     let result = match user_res {
-                        Ok(user) => (Ok(Response::with((status::Ok, render_page("Thanks for logging in!", &navbar_info,html!{("Thank you, ") (user_form.username)}))))),
+                        Ok(_user) => (Ok(Response::with((status::Ok, render_page("Thanks for logging in!", &navbar_info,html!{("Thank you, ") (user_form.username)}))))),
                         Err(e) => {
                             println!("Error logging in: {:?}", e);
                             Ok(Response::with((status::BadRequest, render_page("Could not log you in, seems like your details were wrong!", &navbar_info,html!{}))))
@@ -230,8 +230,8 @@ fn get_on_stripe_redirect(req: &mut Request) -> IronResult<Response> {
                 let mut session = req.session();
                 stripe_service.onboard_seller(con, code, &user_session, session)
 
-                    .map(|r| {
-                        let to_return = Some(Ok((Response::with((iron::status::Ok, render_page("You've successfully been onboarded!", &navbar_info, html!{}))))));
+                    .map(|_r| {
+                        let to_return = Some(Ok(Response::with((iron::status::Ok, render_page("You've successfully been onboarded!", &navbar_info, html!{})))));
                         navbar_info = navbar_info_from_usersession(user_session);
                         to_return
                     })
@@ -243,12 +243,12 @@ fn get_on_stripe_redirect(req: &mut Request) -> IronResult<Response> {
             },
             _ => Some(Ok(Response::with((iron::status::BadRequest, "Code required")))),
             }));
-    return r.unwrap_or(Ok((Response::with((iron::status::BadRequest, "You're probably not logged in...")))))
+    return r.unwrap_or(Ok(Response::with((iron::status::BadRequest, "You're probably not logged in..."))))
 }
 
 fn get_stripe_payer_signup_form(req: &mut Request) -> IronResult<Response> {
     let navbar_info = &calculate_navbar_info(req.session());
-    let user_session = assert_login!(req.session(), navbar_info);
+    let _user_session = assert_login!(req.session(), navbar_info);
     Ok(Response::with((iron::status::Ok, render_payer_signup_form(navbar_info, &ValidationErrors::new()))))
 }
 
@@ -263,12 +263,12 @@ fn post_stripe_payer_signup_form(req: &mut Request) -> IronResult<Response> {
     match payer_form.validate() {
         Ok(_) => {
             with_connection!(req, |con| {
-                let mut session = req.session();
+                let session = req.session();
                 let res = Some(stripe_service.onboard_payer(con, payer_form, user_session.clone(), session));
                 navbar_info = navbar_info_from_usersession(user_session.clone());
                 res
             })
-            .map(|val| Ok(Response::with((iron::status::Ok, render_page("You have created a customer!", &navbar_info, html!{})))))
+            .map(|_val| Ok(Response::with((iron::status::Ok, render_page("You have created a customer!", &navbar_info, html!{})))))
             .unwrap_or(Ok(Response::with((iron::status::InternalServerError, render_page("Could not create customer", &navbar_info, html!{})))))
         },
         Err(e) => {
@@ -289,7 +289,7 @@ fn get_create_listing_form(req: &mut Request) -> IronResult<Response> {
 fn post_create_listing_form(req: &mut Request) -> IronResult<Response> {
     println!("Create listing");
     let stripe_service = StripeService::new();
-    let mut navbar_info;
+    let navbar_info;
     { navbar_info =  calculate_navbar_info(req.session()); }
     let user_session;
     let seller_id;
@@ -302,7 +302,7 @@ fn post_create_listing_form(req: &mut Request) -> IronResult<Response> {
     match listing_form.validate() {
         Ok(_) => {
             with_connection!(req, |con| Some(stripe_service.create_listing(con, listing_form)))
-                .map(|val| Ok(Response::with((iron::status::Ok, render_page("You have created a listing!", &navbar_info, html!{})))))
+                .map(|_val| Ok(Response::with((iron::status::Ok, render_page("You have created a listing!", &navbar_info, html!{})))))
                 .unwrap_or(Ok(Response::with((iron::status::InternalServerError, render_page("Could not create listing", &navbar_info, html!{})))))
         }
         Err(e) => {
