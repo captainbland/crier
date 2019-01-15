@@ -19,7 +19,7 @@ fn test_001_create_user() {
     driver.query_element(Selector::CSS, "#password2").unwrap().type_text("Password123!").unwrap();
     driver.query_element(Selector::CSS, "#email").unwrap().type_text("test@example.com").unwrap();
     driver.query_element(Selector::CSS, "#submit").unwrap().click().unwrap();
-
+    driver.query_element(Selector::CSS, "#success").expect("Should succeed");
     driver.delete_session();
 
 }
@@ -32,5 +32,16 @@ fn test_002_login_user() {
     driver.query_element(Selector::CSS, "#username").unwrap().type_text("test").unwrap();
     driver.query_element(Selector::CSS, "#password").unwrap().type_text("Password123!").unwrap();
     driver.query_element(Selector::CSS, "#submit").unwrap().click().unwrap();
+    driver.query_element(Selector::CSS, "#success").expect("Should succeed");
+
+}
+
+#[test]
+fn test_003_onboard_seller() {
+    let mut driver = WebDriver::new(Browser::Chrome);
+    driver.start_session();
+    driver.navigate("http://localhost:9080/stripe/onboarding_url").unwrap();
+    driver.query_element(Selector::CSS, "#skip-account-app").unwrap().click().unwrap();
+    driver.query_element(Selector::CSS, "#success").expect("Should succeed");
 
 }

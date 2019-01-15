@@ -65,6 +65,14 @@ pub fn render_page(title: &str, navbar_info: &NavbarInfo, contents: Markup) -> M
     render_page_with_scripts(title, navbar_info, contents, vec![])
 }
 
+pub fn render_success(title: &str, body: &str, navbar_info: &NavbarInfo) -> Markup {
+    render_page(title, navbar_info, html! {
+        p { (body) }
+        div id="success" {}
+    })
+}
+
+
 pub fn render_page_with_scripts(title: &str, navbar_info: &NavbarInfo, contents: Markup, scripts: Vec<&str>) -> Markup {
     html! {
         (header(title))
@@ -98,6 +106,7 @@ pub fn render_input(label: &str, name: &str, input_type: &str, errors: &Validati
         }
     }
 }
+
 
 pub fn render_currency_input(label: &str, name: &str, errors: &ValidationErrors) -> Markup {
     html!{

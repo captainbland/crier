@@ -110,19 +110,13 @@ fn post_register(req: &mut Request) -> IronResult<Response> {
 
     match user_form.validate() {
         Ok(_) => {
-            let res: Result<Response, IronError> = (req.extensions.get::<DatabaseExtension>())
-                .map(|p| p.get())
-                .and_then(|res| res.ok() )
-                .and_then(|con| {
-                    let insert_res = user_service.create_user(con, &user_form, req.session());
+                    let insert_res = user_service.create_user(&user_form, req.session());
                     let result = match insert_res {
                         Ok(_res) => (Ok(Response::with((status::Ok, render_post_registration_page(navbar_info))))),
                         Err(e) => Ok(Response::with((status::BadRequest, render_page("There was a problem registering...", navbar_info,html!{(e.to_string())}))))
                     };
                     Some(result)
-                })
-                .unwrap_or( Ok(Response::with((status::InternalServerError, render_page("There was a problem registering...", navbar_info,html!{})))));
-            return res;
+                .unwrap_or( Ok(Response::with((status::InternalServerError, render_page("There was a problem registering...", navbar_info,html!{})))))
         },
 
         Err(err) => Ok(Response::with((status::BadRequest, render_registration_form(navbar_info, &err))))
@@ -175,7 +169,7 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
 
                     let session: &mut Session = req.session();
 
-                    let user_res = user_service.login(con, &user_form, session);
+                    let user_res = user_service.login( &user_form, session);
                     let result = match user_res {
                         Ok(_user) => (Ok(Response::with((status::Ok, render_page("Thanks for logging in!", &navbar_info,html!{("Thank you, ") (user_form.username)}))))),
                         Err(e) => {

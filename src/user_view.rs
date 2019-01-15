@@ -32,5 +32,6 @@ pub fn render_post_registration_page(navbar_info: &NavbarInfo) -> Markup {
         p{("Now would you like to: ")}
         p {a href="/stripe/payer_signup" {("Make payments")} }
         p {a href="/stripe/onboarding_url" {("Take payments with Stripe")} }
+        div id="success" {}
     })
 }
