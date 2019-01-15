@@ -1,5 +1,7 @@
 FROM rust:1.31-slim
 
+EXPOSE 9080
+
 WORKDIR /usr/src/myapp
 COPY . .
 
