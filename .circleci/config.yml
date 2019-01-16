@@ -5,6 +5,10 @@ jobs:
       - image: rust:1.31-slim
     steps:
       - checkout
+      - restore_cache:
+          - keys:
+              - target-
+              -
       - run:
           name: Build
           command: |
@@ -13,3 +17,6 @@ jobs:
             cargo install --path .
             cargo install diesel_cli && diesel setup && diesel migration run
 
+      - save_cache:
+          key: target-
+          paths: "target"
