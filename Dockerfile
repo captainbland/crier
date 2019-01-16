@@ -8,6 +8,6 @@ COPY . .
 RUN apt-get update && apt-get install -y libssl-dev pkg-config libpq-dev
 RUN rustup default nightly
 RUN cargo install --path .
-RUN cargo install diesel_cli && diesel setup && diesel migration run
+RUN cargo install diesel_cli --no-default-features --features "postgres" && diesel setup && diesel migration run
 
 CMD ["crier"]
