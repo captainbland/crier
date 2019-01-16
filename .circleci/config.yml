@@ -22,4 +22,4 @@ jobs:
           paths: "target"
       - save_cache:
           key: cargo-
-          paths: "~/cargo"d
+          paths: "~/cargo"
