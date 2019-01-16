@@ -15,12 +15,11 @@ jobs:
           command: |
             apt-get update && apt-get install -y libssl-dev pkg-config libpq-dev
             rustup default nightly
-            cargo install --path .
-            cargo install diesel_cli && diesel setup && diesel migration run
+            cargo build --release
 
       - save_cache:
           key: target-
           paths: "target"
       - save_cache:
           key: cargo-
-          paths: "~/cargo"
+          paths: "~/cargo"d
