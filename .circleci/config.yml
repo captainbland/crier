@@ -8,6 +8,7 @@ jobs:
       - restore_cache:
           keys:
               - target-
+              - cargo-
 
       - run:
           name: Build
@@ -20,3 +21,6 @@ jobs:
       - save_cache:
           key: target-
           paths: "target"
+      - save_cache:
+          key: cargo-
+          paths: "~/cargo"
