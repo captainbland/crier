@@ -8,7 +8,7 @@ jobs:
       - restore_cache:
           - keys:
               - target-
-              -
+
       - run:
           name: Build
           command: |
