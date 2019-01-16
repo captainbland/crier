@@ -6,13 +6,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Greeting
-          command: echo Hello, world.
-      - run:
-          - name: Build
-            command: |
-              apt-get update && apt-get install -y libssl-dev pkg-config libpq-dev
-              rustup default nightly
-              cargo install --path .
-              cargo install diesel_cli && diesel setup && diesel migration run
+        - name: Build
+          command: |
+            apt-get update && apt-get install -y libssl-dev pkg-config libpq-dev
+            rustup default nightly
+            cargo install --path .
+            cargo install diesel_cli && diesel setup && diesel migration run
 
