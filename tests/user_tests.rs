@@ -28,20 +28,36 @@ fn test_001_create_user() {
 fn test_002_login_user() {
     let mut driver = WebDriver::new(Browser::Chrome);
     driver.start_session();
+    login_user(&driver);
+
+}
+
+fn login_user(driver: &WebDriver) {
     driver.navigate("http://localhost:9080/login").unwrap();
     driver.query_element(Selector::CSS, "#username").unwrap().type_text("test").unwrap();
     driver.query_element(Selector::CSS, "#password").unwrap().type_text("Password123!").unwrap();
     driver.query_element(Selector::CSS, "#submit").unwrap().click().unwrap();
     driver.query_element(Selector::CSS, "#success").expect("Should succeed");
+}
 
+fn click(driver: &WebDriver, selector: &str) {
+    driver.query_element(Selector::CSS, selector).unwrap().click().unwrap();
+}
+
+
+fn type_text(driver: &WebDriver, selector: &str, text: &str) {
+    driver.query_element(Selector::CSS, selector).unwrap().type_text(text).unwrap();
 }
 
 #[test]
 fn test_003_onboard_seller() {
     let mut driver = WebDriver::new(Browser::Chrome);
     driver.start_session();
+    login_user(&driver);
     driver.navigate("http://localhost:9080/stripe/onboarding_url").unwrap();
-    driver.query_element(Selector::CSS, "#skip-account-app").unwrap().click().unwrap();
+
+    click(&driver, "#skip-account-app");
     driver.query_element(Selector::CSS, "#success").expect("Should succeed");
 
 }
+

@@ -25,12 +25,14 @@ use user_model::User;
 use type_wrappers::{DBConnection, Session};
 use listing_model::*;
 use user_service::UserDAOImpl;
+use db_connection::get_connection;
 
 pub struct StripeService {
     pub publishable_key: String,
     pub secret_key: String,
     pub client: reqwest::Client,
-    pub user_service: UserService<UserDAOImpl>
+    pub user_service: UserService<UserDAOImpl>,
+    pub stripe_dao: StripeDAOImpl
 }
 
 impl StripeService {
@@ -39,7 +41,8 @@ impl StripeService {
         let secret_key = env::var("STRIPE_SECRET_KEY").unwrap();
         let client = reqwest::Client::new();
         let user_service = UserService::new();
-        StripeService {publishable_key, secret_key, client, user_service}
+        let stripe_dao = StripeDAOImpl::new();
+        StripeService {publishable_key, secret_key, client, user_service, stripe_dao}
     }
 
     pub fn onboard_seller(&self, con: DBConnection, code: &str, user_session: &UserSession, session: &mut Session) -> std::result::Result<i32, String> {
@@ -65,8 +68,6 @@ impl StripeService {
                maybe_access_token) {
             (Some(publishable_key_value), Some(service_user_id_value),
             Some(refresh_token_value), Some(access_token_value)) => {
-                use schema::seller::dsl::*;
-
 
                 let user;
                 {
@@ -82,14 +83,8 @@ impl StripeService {
                 };
 
 
-                let val = insert_into(seller)
-                    .values(seller_entry)
-                    .returning(id)
-                    .get_results(&con)
-                    .map_err(|e| {
-                        println!("WARN: there was an error inserting seller information {:?}", e);
-                        format!("Could not insert seller information: {:?}", e)
-                    }).map(|v| v.clone().pop());
+                let val = self.stripe_dao.create_seller(seller_entry);
+
 
                 match val {
                     Ok(Some(value)) => {
@@ -129,14 +124,7 @@ impl StripeService {
         }).map(|args| {
 
             let (_cust, payer_entry, payer) = args;
-            let returned = insert_into(payer)
-                .values(payer_entry)
-                .returning(id)
-                .get_results(&con)
-                .map_err(|e| {
-                    println!("WARN: there was an error inserting seller information {:?}", e);
-                    format!("Could not insert seller information: {:?}", e)
-                }).map(|v| v.clone().pop());
+            let returned = self.stripe_dao.create_payer(payer_entry);
 
             match returned {
                 Ok(Some(payer_id)) => {
@@ -165,5 +153,50 @@ impl StripeService {
             //.unwrap_or_else(|e| Err(format!("There was a problem creating a listing: {:?}", e)));
 
         ret
+    }
+}
+
+pub trait StripeDAO {
+    fn create_seller(&self, seller_entry: SellerCreation) -> Result<Option<i32>, String>;
+    fn create_payer(&self, payer: PayerEntry) -> Result<Option<i32>, String>;
+    fn create_listing(&self, listing: Listing) -> Result<i32, String>;
+}
+
+pub struct StripeDAOImpl {}
+
+
+impl StripeDAOImpl {
+    pub fn new() -> StripeDAOImpl { StripeDAOImpl {} }
+}
+
+impl StripeDAO for StripeDAOImpl {
+    fn create_seller(&self, seller_entry: SellerCreation) -> Result<Option<i32>, String> {
+        use schema::seller::dsl::*;
+
+        insert_into(seller)
+            .values(seller_entry)
+            .returning(id)
+            .get_results(&get_connection())
+            .map_err(|e| {
+                println!("WARN: there was an error inserting seller information {:?}", e);
+                format!("Could not insert seller information: {:?}", e)
+            }).map(|v| v.clone().pop())
+    }
+
+    fn create_payer(&self, payer_entry: PayerEntry) -> Result<Option<i32>, String> {
+        use schema::payer::dsl::*;
+
+        insert_into(payer)
+            .values(payer_entry)
+            .returning(id)
+            .get_results(&get_connection())
+            .map_err(|e| {
+                println!("WARN: there was an error inserting seller information {:?}", e);
+                format!("Could not insert seller information: {:?}", e)
+            }).map(|v| v.clone().pop())
+    }
+
+    fn create_listing(&self, listing: Listing) -> Result<i32, String> {
+        unimplemented!()
     }
 }

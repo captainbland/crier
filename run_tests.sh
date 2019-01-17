@@ -10,7 +10,7 @@ selproc=$(lsof -t -i :4444)
 export DATABASE_URL='postgres://root:password@127.0.0.1/criertest'
 export RUST_BACKTRACE=1
 diesel database reset
-cargo run crier --features="debug" &
+cargo run crier --release &
 crierproc=$!
 
 sleep 2
