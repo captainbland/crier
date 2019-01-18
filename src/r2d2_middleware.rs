@@ -25,7 +25,7 @@ impl R2D2Middleware {
         let database_url = env::var("DATABASE_URL")
             .expect("DATABASE_URL must be set");
 
-        println!("Database URL: {}", database_url);
+        info!("Database URL: {}", database_url);
         let manager = ConnectionManager::<PgConnection>::new(database_url);
 
         let pool = Pool::builder().max_size(15).build(manager).expect("Failed to create pool - is your database available?.");

@@ -12,7 +12,7 @@ impl QRService {
                                      QrCodeEcc::Medium) {
             Ok(data) => data,
             Err(e) => {
-                println!("{}", e);
+                info!("{}", e);
                 return Err(String::from("Data was too long!"));
             }
         };

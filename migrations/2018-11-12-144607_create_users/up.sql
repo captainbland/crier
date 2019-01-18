@@ -5,6 +5,9 @@ CREATE TABLE crier_user (
   email VARCHAR NOT NULL UNIQUE
 );
 
+CREATE UNIQUE INDEX crier_user_name_idx ON crier_user (username);
+
+
 CREATE TABLE seller (
   id SERIAL PRIMARY KEY UNIQUE,
   crier_user_id INT4 NOT NULL REFERENCES crier_user(id),

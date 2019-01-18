@@ -125,8 +125,8 @@ fn is_error_for(errors: &ValidationErrors, name: &str) -> bool {
 }
 
 fn cat_errors_for_field(errors: &ValidationErrors, name: &str) -> String {
-    println!("Errors: {:?}", errors);
-    println!("Name: {}", name);
+    info!("Errors: {:?}", errors);
+    info!("Name: {}", name);
     let error_strings: Vec<String> = match errors.clone().field_errors().get(name) {
         Some(some_errs) => some_errs.iter()
             .map(|e| e.to_owned().message.map(|m| String::from(m)))
@@ -135,6 +135,6 @@ fn cat_errors_for_field(errors: &ValidationErrors, name: &str) -> String {
 
         _ => return String::from("")
     };
-    println!("Errors: {:?}", error_strings);
+    info!("Errors: {:?}", error_strings);
     error_strings.join(", ")
 }

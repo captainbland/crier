@@ -30,17 +30,19 @@ use validator::*;
 use controller::*;
 use r2d2_middleware;
 use controller;
+use env_logger::*;
+use db_connection::get_connection;
 
 pub fn run() {
     dotenv().ok();
-
+    env_logger::init();
     let router = controller::get_router();
 
     let mut mount = Mount::new();
     mount.mount("/", router)
         .mount("/static/", Static::new(Path::new("static")));
 
-
+    get_connection();
     let (logger_before, logger_after) = Logger::new(None);
     let connection_pool_middleware = r2d2_middleware::R2D2Middleware::new();
     let mut chain = Chain::new(mount);

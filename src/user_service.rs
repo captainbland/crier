@@ -4,7 +4,8 @@ use diesel::{
     pg::PgConnection,
     prelude::*,
     r2d2::ConnectionManager,
-    result::{DatabaseErrorInformation, DatabaseErrorKind, DatabaseErrorKind::*, Error}
+    result::{DatabaseErrorInformation, DatabaseErrorKind, DatabaseErrorKind::*, Error},
+    debug_query
 };
 use r2d2::PooledConnection;
 
@@ -15,6 +16,7 @@ use type_wrappers::{DBConnection, Session};
 use seller_model::SellerCreation;
 use mock_derive::mock;
 use db_connection::get_connection;
+use diesel::pg::Pg;
 
 pub struct UserService<T: UserDAO>  {
     user_dao: T
@@ -44,26 +46,35 @@ impl <T: UserDAO + Default> UserService<T> {
 
     pub fn login(&self, login_form: &LoginForm, session: &mut Session) -> Result<User, String> {
 
-        let login_query:LoginQuery = login_form.into();
 
+        info!("Logging in!");
+        let login_query:LoginQuery = login_form.into();
 
 
         let user: Result<User, String> = match self.user_dao.load_user(&login_query) {
             Ok(res) => res.clone().pop()
                 .and_then(|u| {
+                    info!("USer exists!");
                     match verify(login_form.password.as_str(), u.password.as_str()) {
                         Ok(true) => {
                             let user_seller: Option<i32>;
                             {
+                                info!("Loading seller info...");
                                 use schema::seller::dsl::*;
                                 user_seller = self.user_dao.load_seller_id(u.id).map(|s| s.clone().pop()).ok().unwrap_or(None);
+                                info!("Loaded seller info.");
                             }
                             let user_payer: Option<i32>;
                             {
+                                info!("Loading payer info...");
                                 use schema::payer::dsl::*;
                                 user_payer = self.user_dao.load_payer_id(u.id).map(|s| s.clone().pop()).ok().unwrap_or(None);
+                                info!("Loaded payer info");
                             }
+
+                            info!("Setting session...");
                             session.set(UserSession {username: login_query.username.clone(), seller_id: user_seller, payer_id: user_payer });
+                            info!("Set session");
 
                             Some(Ok(u))
                         },
@@ -87,7 +98,7 @@ impl <T: UserDAO + Default> UserService<T> {
     }
 
     fn handle_insert_error(&self, register_form: &RegisterForm, e: Error) -> Result<usize, String> {
-        println!("Error: {:?}", e);
+        info!("Error: {:?}", e);
 
         match e {
             Error::DatabaseError(UniqueViolation, info) => {
@@ -142,11 +153,15 @@ impl UserDAO for UserDAOImpl {
 
     fn load_user(&self, login_query: &LoginQuery) -> QueryResult<Vec<User>> {
         use schema::crier_user::dsl::*;
+        info!("Load user...");
+        let query = crier_user
+            .filter(username.eq(&login_query.username));
+        let dbg_query = debug_query::<Pg, _>(&query);
+        info!("Debug query: {:?}", dbg_query);
 
-        crier_user
-            .filter(username.eq(&login_query.username))
-            .distinct()
-            .load::<User>(&get_connection())
+        let to_return = query.load::<User>(&get_connection());
+        info!("Loaded user");
+        to_return
     }
 
     fn load_seller_id(&self, user_id: i32) -> QueryResult<Vec<i32>> {

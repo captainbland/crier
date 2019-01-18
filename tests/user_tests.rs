@@ -9,11 +9,11 @@ use std::time;
 fn test_001_create_user() {
 
 
-    println!("We're running!");
+    info!("We're running!");
 
     let mut driver = WebDriver::new(Browser::Chrome);
     driver.start_session();
-    driver.navigate("http://localhost:9080/register").map_err(|e| eprintln!("{}", e)).expect("Need to access web page");
+    driver.navigate("http://localhost:9080/register").map_err(|e| einfo!("{}", e)).expect("Need to access web page");
     driver.query_element(Selector::CSS, "#username").unwrap().type_text("test").expect("cannot type text");
     driver.query_element(Selector::CSS, "#password").unwrap().type_text("Password123!").unwrap();
     driver.query_element(Selector::CSS, "#password2").unwrap().type_text("Password123!").unwrap();

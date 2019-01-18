@@ -39,10 +39,10 @@ fn password(password: &str) -> Result<(), ValidationError> {
     let matches = re_vec.iter().filter(|rexp| Regex::new(rexp)
         .map(|re| {
             let is_match = re.is_match(password);
-            println!("password {} is match for re {}: {}", password, re, is_match);
+            info!("password {} is match for re {}: {}", password, re, is_match);
             is_match
         })
-        .map_err(|e| println!("{}", e))
+        .map_err(|e| info!("{}", e))
         .unwrap_or(false)).count();
     // count instances of the required character types
     if matches == re_vec.len() {
@@ -51,7 +51,7 @@ fn password(password: &str) -> Result<(), ValidationError> {
 
     let mut error = ValidationError::new("password");
     error.message = Some(Cow::Owned(String::from("Password should contain a lower case, an upper case, a number and a punctuation character")));
-    println!("Passed validations for failure: {}", matches);
+    info!("Passed validations for failure: {}", matches);
     Err(error)
 }
 
@@ -76,7 +76,7 @@ impl<'a> Into<UserCreation> for  &'a RegisterForm {
         return UserCreation {
             username: self.username.clone(),
             password: hash(self.password.clone().as_str(), BLOWFISH_COST).unwrap_or_else(|e| {
-                println!("ERROR! Could not hash password. {:?}", e);
+                info!("ERROR! Could not hash password. {:?}", e);
                 String::from("") // this should fail for every username; performance could be improved by not going to database but this error shouldn't actually happen unless there's a server config error
             }),
             email: self.email.clone()
@@ -112,7 +112,7 @@ impl<'a> Into<LoginQuery> for  &'a LoginForm {
         LoginQuery {
             username: self.username.clone(),
             password: hash(self.password.clone().as_str(), BLOWFISH_COST).unwrap_or_else(|e| {
-                println!("ERROR! Could not hash password. {:?}", e);
+                info!("ERROR! Could not hash password. {:?}", e);
                 String::from("") // this should fail for every username; performance could be improved by not going to database but this error shouldn't actually happen unless there's a server config error
             }),
         }
@@ -122,14 +122,14 @@ impl<'a> Into<LoginQuery> for  &'a LoginForm {
 impl iron_sessionstorage::Value for UserSession {
     fn get_key() -> &'static str { "logged_in_user" }
     fn into_raw(self) -> String {
-        println!("INTO RAW DEBUG: {:?}", self);
+        info!("INTO RAW DEBUG: {:?}", self);
         let to_return = serde_json::to_string(&self).unwrap_or(String::from(""));
-        println!("INTO RAW DEBUG: {:?}", to_return);
+        info!("INTO RAW DEBUG: {:?}", to_return);
         to_return
 
     }
     fn from_raw(value: String) -> Option<Self> {
-        println!("FROM_RAW: {:?}", value);
+        info!("FROM_RAW: {:?}", value);
         if value.is_empty() {
             None
         } else {

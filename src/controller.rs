@@ -83,7 +83,7 @@ mod controller_macros {
 }
 
 fn index(req: &mut Request) -> IronResult<Response> {
-    println!("plz render index plz");
+    info!("plz render index plz");
     Ok(Response::with((status::Ok, render_index(&calculate_navbar_info(req.session())))))
 }
 
@@ -101,9 +101,9 @@ fn get_qr(req: &mut Request) -> IronResult<Response> {
 
 
 fn post_register(req: &mut Request) -> IronResult<Response> {
-    println!("Post register");
+    info!("Post register");
     let user_form: RegisterForm = itry!(serde_urlencoded::from_reader(req.body.by_ref()));
-    println!("{:?}", user_form);
+    info!("{:?}", user_form);
     let user_service = UserService::<UserDAOImpl>::new();
     let _response: String = String::from("");
     let navbar_info = &calculate_navbar_info(req.session());
@@ -124,8 +124,9 @@ fn post_register(req: &mut Request) -> IronResult<Response> {
 }
 
 fn get_login(req: &mut Request) -> IronResult<Response> {
-    println!("debug: get_login");
+    info!("debug: get_login");
     let session: &Session = req.session();
+    info!("retrieved session...");
     let navbar_info = &calculate_navbar_info(session);
 
     if session.get::<UserSession>().map(|r| r.is_some()).unwrap_or(true) {
@@ -149,12 +150,18 @@ fn logout(req: &mut Request) -> IronResult<Response> {
 
 
 fn post_login(req: &mut Request) -> IronResult<Response> {
+    info!("Decoding body");
     let user_form: LoginForm = itry!(serde_urlencoded::from_reader(req.body.by_ref()));
+    info!("Decoded body");
+
     let navbar_info;
     {
+        info!("getting session...");
         let session: &Session = req.session();
+        info!("gotten session...");
         navbar_info = calculate_navbar_info(session).to_owned();
     }
+
 
 
     let user_service = UserService::<UserDAOImpl>::new();
@@ -162,26 +169,20 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
     match user_form.validate() {
         Ok(_) => {
 
-            let res: Result<Response, IronError> = (req.extensions.get::<DatabaseExtension>())
-                .map(|p| p.get())
-                .and_then(|res| res.ok() )
-                .and_then(|con| {
+            info!("getting session...");
+            let session: &mut Session = req.session();
+            info!("gotten session!");
 
-                    let session: &mut Session = req.session();
-
-                    let user_res = user_service.login( &user_form, session);
-                    let result = match user_res {
-                        Ok(_user) => (Ok(Response::with((status::Ok, render_page("Thanks for logging in!", &navbar_info,html!{("Thank you, ") (user_form.username)}))))),
-                        Err(e) => {
-                            println!("Error logging in: {:?}", e);
-                            Ok(Response::with((status::BadRequest, render_page("Could not log you in, seems like your details were wrong!", &navbar_info,html!{}))))
-                        }
-                    };
-                    return Some(result);
+            let user_res = user_service.login( &user_form, session);
+            let result = match user_res {
+                Ok(_user) => (Ok(Response::with((status::Ok, render_page("Thanks for logging in!", &navbar_info,html!{("Thank you, ") (user_form.username)}))))),
+                Err(e) => {
+                    info!("Error logging in: {:?}", e);
+                    Ok(Response::with((status::BadRequest, render_page("Could not log you in, seems like your details were wrong!", &navbar_info,html!{}))))
                 }
+            };
+            return result;
 
-                ).unwrap();
-            return res;
         }
         _ => Ok(Response::with((status::BadRequest, render_page("Could not log you in, seems like your details were wrong!", &navbar_info,html!{}))))
 
@@ -230,7 +231,7 @@ fn get_on_stripe_redirect(req: &mut Request) -> IronResult<Response> {
                         to_return
                     })
                     .map_err(|err| {
-                        println!("Error onboarding: {:?}", err);
+                        info!("Error onboarding: {:?}", err);
                         err
                     })
                     .unwrap_or(Some(Ok(Response::with((iron::status::InternalServerError, "There was an error...")))))
@@ -248,7 +249,7 @@ fn get_stripe_payer_signup_form(req: &mut Request) -> IronResult<Response> {
 
 fn post_stripe_payer_signup_form(req: &mut Request) -> IronResult<Response> {
     let stripe_service = StripeService::new();
-    println!("Post stripe payer signup form");
+    info!("Post stripe payer signup form");
     let mut navbar_info;
     { navbar_info =  calculate_navbar_info(req.session()); }
     let user_session;
@@ -266,7 +267,7 @@ fn post_stripe_payer_signup_form(req: &mut Request) -> IronResult<Response> {
             .unwrap_or(Ok(Response::with((iron::status::InternalServerError, render_page("Could not create customer", &navbar_info, html!{})))))
         },
         Err(e) => {
-            println!("There was a problem: {:?}", e);
+            info!("There was a problem: {:?}", e);
             Ok(Response::with((status::BadRequest, render_payer_signup_form(&navbar_info, &e))))
         }
 
@@ -281,7 +282,7 @@ fn get_create_listing_form(req: &mut Request) -> IronResult<Response> {
 }
 
 fn post_create_listing_form(req: &mut Request) -> IronResult<Response> {
-    println!("Create listing");
+    info!("Create listing");
     let stripe_service = StripeService::new();
     let navbar_info;
     { navbar_info =  calculate_navbar_info(req.session()); }

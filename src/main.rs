@@ -6,6 +6,7 @@ extern crate core;
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
+#[macro_use] extern crate log;
 extern crate env_logger;
 #[macro_use]
 extern crate iron;
@@ -18,6 +19,7 @@ extern crate params;
 extern crate plugin;
 extern crate qrcodegen;
 extern crate r2d2;
+extern crate r2d2_postgres;
 extern crate redis;
 extern crate regex;
 extern crate reqwest;

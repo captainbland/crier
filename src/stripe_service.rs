@@ -49,7 +49,7 @@ impl StripeService {
 
         let url = "https://connect.stripe.com/oauth/token";
 
-        println!("Code: {}", code);
+        info!("Code: {}", code);
         let params = [("code", code), ("client_secret", self.secret_key.as_str()), ("grant_type", "authorization_code")];
 
         let response = self.client.request(Method::POST, url).form(&params).send().and_then(|mut x| x.text()).unwrap_or(String::from("none"));
@@ -59,7 +59,7 @@ impl StripeService {
         let maybe_refresh_token = json["refresh_token"].as_str();
         let maybe_access_token = json["access_token"].as_str();
 
-        println!("onboarding data: {:?}", response);
+        info!("onboarding data: {:?}", response);
 
 
         match (maybe_publishable_key,
@@ -119,7 +119,7 @@ impl StripeService {
                 service_payment_source: payer_form.stripeSource
             };
 
-            println!("Customer created: {:?}", cust.clone());
+            info!("Customer created: {:?}", cust.clone());
             Ok((cust, payer_entry, payer))
         }).map(|args| {
 
@@ -147,7 +147,7 @@ impl StripeService {
             .returning(id)
             .get_results::<i32>(&con)
             .map_err(|e| {
-                println!("WARN: there was a database error creating listing from form: {:?}", e);
+                info!("WARN: there was a database error creating listing from form: {:?}", e);
                 format!("There was a problem creating listing information")
             }).map(|v| v.clone().pop().unwrap());
             //.unwrap_or_else(|e| Err(format!("There was a problem creating a listing: {:?}", e)));
@@ -178,7 +178,7 @@ impl StripeDAO for StripeDAOImpl {
             .returning(id)
             .get_results(&get_connection())
             .map_err(|e| {
-                println!("WARN: there was an error inserting seller information {:?}", e);
+                info!("WARN: there was an error inserting seller information {:?}", e);
                 format!("Could not insert seller information: {:?}", e)
             }).map(|v| v.clone().pop())
     }
@@ -191,7 +191,7 @@ impl StripeDAO for StripeDAOImpl {
             .returning(id)
             .get_results(&get_connection())
             .map_err(|e| {
-                println!("WARN: there was an error inserting seller information {:?}", e);
+                info!("WARN: there was an error inserting seller information {:?}", e);
                 format!("Could not insert seller information: {:?}", e)
             }).map(|v| v.clone().pop())
     }
