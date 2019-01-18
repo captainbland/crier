@@ -4,8 +4,7 @@ use diesel::{
     pg::PgConnection,
     prelude::*,
     r2d2::ConnectionManager,
-    result::{DatabaseErrorInformation, DatabaseErrorKind, DatabaseErrorKind::*, Error},
-    debug_query
+    result::{DatabaseErrorInformation, DatabaseErrorKind, DatabaseErrorKind::*, Error}
 };
 use r2d2::PooledConnection;
 
@@ -16,7 +15,6 @@ use type_wrappers::{DBConnection, Session};
 use seller_model::SellerCreation;
 use mock_derive::mock;
 use db_connection::get_connection;
-use diesel::pg::Pg;
 
 pub struct UserService<T: UserDAO>  {
     user_dao: T
@@ -31,11 +29,11 @@ impl <T: UserDAO + Default> UserService<T> {
         UserService {user_dao};
     }
 
-    pub fn create_user(&self, register_form: &RegisterForm, session: &mut Session) -> Result<usize, String> {
+    pub fn create_user(&self, conn: DBConnection, register_form: &RegisterForm, session: &mut Session) -> Result<usize, String> {
 
         let create_user: UserCreation = register_form.into();
 
-        match self.user_dao.create_user(&create_user) {
+        match self.user_dao.create_user(&create_user, &conn) {
                 Ok(res) => {
                     session.set(UserSession {username: register_form.username.clone(), payer_id: None, seller_id: None });
                     Ok(res)
@@ -44,11 +42,12 @@ impl <T: UserDAO + Default> UserService<T> {
             }
     }
 
-    pub fn login(&self, login_form: &LoginForm, session: &mut Session) -> Result<User, String> {
+    pub fn login(&self, conn: DBConnection, login_form: &LoginForm, session: &mut Session) -> Result<User, String> {
 
 
         info!("Logging in!");
         let login_query:LoginQuery = login_form.into();
+
 
 
         let user: Result<User, String> = match self.user_dao.load_user(&login_query) {
@@ -62,14 +61,12 @@ impl <T: UserDAO + Default> UserService<T> {
                                 info!("Loading seller info...");
                                 use schema::seller::dsl::*;
                                 user_seller = self.user_dao.load_seller_id(u.id).map(|s| s.clone().pop()).ok().unwrap_or(None);
-                                info!("Loaded seller info.");
                             }
                             let user_payer: Option<i32>;
                             {
                                 info!("Loading payer info...");
                                 use schema::payer::dsl::*;
                                 user_payer = self.user_dao.load_payer_id(u.id).map(|s| s.clone().pop()).ok().unwrap_or(None);
-                                info!("Loaded payer info");
                             }
 
                             info!("Setting session...");
@@ -89,10 +86,10 @@ impl <T: UserDAO + Default> UserService<T> {
 
     }
 
-    pub fn get_user_from_session(&self, user_session: &UserSession) -> Result<User, String> {
+    pub fn get_user_from_session(&self, user_session: &UserSession, conn: &DBConnection) -> Result<User, String> {
         use schema::crier_user::dsl::*;
         crier_user.filter(username.eq(user_session.username.clone())).limit(1)
-            .load::<User>(&get_connection())
+            .load::<User>(conn)
             .map(|vec| vec.clone().pop().ok_or(format!("There was no user {}", user_session.username)))
             .unwrap_or(Err(String::from("Could not load user")))
     }
@@ -129,10 +126,10 @@ impl <T: UserDAO + Default> UserService<T> {
 
 #[mock]
 pub trait UserDAO {
-    fn create_user(&self, user_creation: &UserCreation) -> QueryResult<usize>;
-    fn load_user(&self, login_query: &LoginQuery) -> QueryResult<Vec<User>>;
-    fn load_seller_id(&self, user_id: i32) -> QueryResult<Vec<i32>>;
-    fn load_payer_id(&self, user_id: i32) -> QueryResult<Vec<i32>>;
+    fn create_user(&self, user_creation: &UserCreation, conn: &DBConnection) -> QueryResult<usize>;
+    fn load_user(&self, login_query: &LoginQuery, conn: &DBConnection) -> QueryResult<Vec<User>>;
+    fn load_seller_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>>;
+    fn load_payer_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>>;
 }
 
 
@@ -143,35 +140,31 @@ pub struct UserDAOImpl {}
 
 #[cfg(not(test))]
 impl UserDAO for UserDAOImpl {
-    fn create_user(&self, create_user: &UserCreation) -> QueryResult<usize> {
+    fn create_user(&self, create_user: &UserCreation, conn: &DBConnection) -> QueryResult<usize> {
         use schema::crier_user::dsl::*;
 
         insert_into(crier_user)
             .values(create_user)
-            .execute(&get_connection())
+            .execute(conn)
     }
 
-    fn load_user(&self, login_query: &LoginQuery) -> QueryResult<Vec<User>> {
+    fn load_user(&self, login_query: &LoginQuery, conn: &DBConnection) -> QueryResult<Vec<User>> {
         use schema::crier_user::dsl::*;
-        info!("Load user...");
-        let query = crier_user
-            .filter(username.eq(&login_query.username));
-        let dbg_query = debug_query::<Pg, _>(&query);
-        info!("Debug query: {:?}", dbg_query);
 
-        let to_return = query.load::<User>(&get_connection());
-        info!("Loaded user");
-        to_return
+        crier_user
+            .filter(username.eq(&login_query.username))
+            .distinct()
+            .load::<User>(conn)
     }
 
-    fn load_seller_id(&self, user_id: i32) -> QueryResult<Vec<i32>> {
+    fn load_seller_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>> {
         use schema::seller::dsl::*;
-        seller.select(id).filter(crier_user_id.eq(user_id)).distinct().load::<i32>(&get_connection())
+        seller.select(id).filter(crier_user_id.eq(user_id)).distinct().load::<i32>(conn)
     }
 
-    fn load_payer_id(&self, user_id: i32) -> QueryResult<Vec<i32>> {
+    fn load_payer_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>> {
         use schema::payer::dsl::*;
-         payer.select(id).filter(crier_user_id.eq(user_id)).distinct().load::<i32>(&get_connection())
+         payer.select(id).filter(crier_user_id.eq(user_id)).distinct().load::<i32>(conn)
     }
 }
 

@@ -36,8 +36,6 @@ extern crate validator;
 extern crate validator_derive;
 #[macro_use]
 extern crate mock_derive;
-#[macro_use]
-extern crate lazy_static;
 
 
 use application::run;
@@ -58,7 +56,7 @@ pub mod type_wrappers;
 pub mod listing_model;
 
 pub mod schema;
-pub mod db_connection;
+
 pub mod r2d2_middleware;
 pub mod navbar_info;
 

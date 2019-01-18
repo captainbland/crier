@@ -71,7 +71,7 @@ impl StripeService {
 
                 let user;
                 {
-                    user = self.user_service.get_user_from_session(user_session)?;
+                    user = self.user_service.get_user_from_session(user_session, &con)?;
                 }
 
                 let seller_entry = SellerCreation {
@@ -111,7 +111,7 @@ impl StripeService {
         customer_params.description = Some(customer_params_description);
         let client = stripe::Client::new(self.secret_key.as_ref());
         stripe::Customer::create(&client, customer_params).and_then(|cust| {
-            let user = self.user_service.get_user_from_session(&user_session).unwrap();
+            let user = self.user_service.get_user_from_session(&user_session, &con).unwrap();
 
             let payer_entry = PayerEntry {
                 crier_user_id: user.id,

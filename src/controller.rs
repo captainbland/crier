@@ -110,13 +110,19 @@ fn post_register(req: &mut Request) -> IronResult<Response> {
 
     match user_form.validate() {
         Ok(_) => {
-                    let insert_res = user_service.create_user(&user_form, req.session());
+            let res: Result<Response, IronError> = (req.extensions.get::<DatabaseExtension>())
+                .map(|p| p.get())
+                .and_then(|res| res.ok() )
+                .and_then(|con| {
+                    let insert_res = user_service.create_user(con, &user_form, req.session());
                     let result = match insert_res {
                         Ok(_res) => (Ok(Response::with((status::Ok, render_post_registration_page(navbar_info))))),
                         Err(e) => Ok(Response::with((status::BadRequest, render_page("There was a problem registering...", navbar_info,html!{(e.to_string())}))))
                     };
                     Some(result)
-                .unwrap_or( Ok(Response::with((status::InternalServerError, render_page("There was a problem registering...", navbar_info,html!{})))))
+                })
+                .unwrap_or( Ok(Response::with((status::InternalServerError, render_page("There was a problem registering...", navbar_info,html!{})))));
+            return res;
         },
 
         Err(err) => Ok(Response::with((status::BadRequest, render_registration_form(navbar_info, &err))))
@@ -156,12 +162,9 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
 
     let navbar_info;
     {
-        info!("getting session...");
         let session: &Session = req.session();
-        info!("gotten session...");
         navbar_info = calculate_navbar_info(session).to_owned();
     }
-
 
 
     let user_service = UserService::<UserDAOImpl>::new();
@@ -169,20 +172,26 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
     match user_form.validate() {
         Ok(_) => {
 
-            info!("getting session...");
-            let session: &mut Session = req.session();
-            info!("gotten session!");
+            let res: Result<Response, IronError> = (req.extensions.get::<DatabaseExtension>())
+                .map(|p| p.get())
+                .and_then(|res| res.ok() )
+                .and_then(|con| {
 
-            let user_res = user_service.login( &user_form, session);
-            let result = match user_res {
-                Ok(_user) => (Ok(Response::with((status::Ok, render_page("Thanks for logging in!", &navbar_info,html!{("Thank you, ") (user_form.username)}))))),
-                Err(e) => {
-                    info!("Error logging in: {:?}", e);
-                    Ok(Response::with((status::BadRequest, render_page("Could not log you in, seems like your details were wrong!", &navbar_info,html!{}))))
+                    let session: &mut Session = req.session();
+
+                    let user_res = user_service.login( &user_form, session);
+                    let result = match user_res {
+                        Ok(_user) => (Ok(Response::with((status::Ok, render_page("Thanks for logging in!", &navbar_info,html!{("Thank you, ") (user_form.username)}))))),
+                        Err(e) => {
+                            println!("Error logging in: {:?}", e);
+                            Ok(Response::with((status::BadRequest, render_page("Could not log you in, seems like your details were wrong!", &navbar_info,html!{}))))
+                        }
+                    };
+                    return Some(result);
                 }
-            };
-            return result;
 
+                ).unwrap();
+            return res;
         }
         _ => Ok(Response::with((status::BadRequest, render_page("Could not log you in, seems like your details were wrong!", &navbar_info,html!{}))))
 
