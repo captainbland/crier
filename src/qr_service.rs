@@ -7,6 +7,10 @@ pub struct QRService {
 }
 
 impl QRService {
+    pub fn new() -> QRService {
+        QRService {}
+    }
+
     pub fn create_svg_data(self: &mut QRService, data: &str) -> Result<String, String> {
         let qr = match QrCode::encode_text(data,
                                      QrCodeEcc::Medium) {

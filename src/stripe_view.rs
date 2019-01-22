@@ -2,6 +2,7 @@ use maud::*;
 use navbar_info::NavbarInfo;
 use render_tools::*;
 use validator::ValidationErrors;
+use listing_model::Listing;
 
 pub fn render_payer_signup_form(navbar_info: &NavbarInfo, errors: &ValidationErrors) -> Markup {
     render_page_with_scripts("Register to pay with us", navbar_info,html!{
@@ -25,11 +26,28 @@ pub fn render_create_listing_form(navbar_info: &NavbarInfo,  errors: &Validation
     render_page("Create listing", navbar_info,html!{
         form.form-group method="POST" action="/create_listing" {
             (render_input("Title", "title", "text", errors))
-            (render_currency_input("Amount", "amount", errors))
+            (render_currency_input("Cost", "cost", errors))
             (render_input("Quantity", "quantity", "number", errors))
             (render_input("Currency", "currency", "text", errors))
-            input.btn.btn-primary type=("submit") value="Register";
+            input.btn.btn-primary type=("submit") id="submit" value="Register";
         }
     })
 
+}
+
+pub fn render_listing(navbar_info: &NavbarInfo, listing: Listing, qr_data: String) -> Markup {
+    render_page("Listing", navbar_info, html! {
+            h2 {(listing.title)}
+            table.table {
+                tr {
+                    td {("Price")} td{(listing.cost)}
+                }
+                tr {
+                    td {("Currency")} td{(listing.currency)}
+                }
+            }
+            ("Pay code: ") br;
+
+            div.qr_container { (PreEscaped(qr_data)) }
+        })
 }

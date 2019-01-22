@@ -9,5 +9,5 @@ RUN apt-get update && apt-get install -y libssl-dev pkg-config libpq-dev
 RUN rustup default nightly
 RUN cargo install --path .
 RUN cargo install diesel_cli --no-default-features --features "postgres"
-
-CMD ["crier"]
+RUN chmod +x runapp.sh
+CMD ["runapp.sh"]

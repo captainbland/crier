@@ -12,9 +12,8 @@ use schema::crier_user;
 use user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
 use user_model::UserSession;
 use type_wrappers::{DBConnection, Session};
-use seller_model::SellerCreation;
+use seller_model::SellerEntry;
 use mock_derive::mock;
-use db_connection::get_connection;
 
 pub struct UserService<T: UserDAO>  {
     user_dao: T
@@ -48,9 +47,7 @@ impl <T: UserDAO + Default> UserService<T> {
         info!("Logging in!");
         let login_query:LoginQuery = login_form.into();
 
-
-
-        let user: Result<User, String> = match self.user_dao.load_user(&login_query) {
+        let user: Result<User, String> = match self.user_dao.load_user(&login_query, &conn) {
             Ok(res) => res.clone().pop()
                 .and_then(|u| {
                     info!("USer exists!");
@@ -60,13 +57,13 @@ impl <T: UserDAO + Default> UserService<T> {
                             {
                                 info!("Loading seller info...");
                                 use schema::seller::dsl::*;
-                                user_seller = self.user_dao.load_seller_id(u.id).map(|s| s.clone().pop()).ok().unwrap_or(None);
+                                user_seller = self.user_dao.load_seller_id(u.id, &conn).map(|s| s.clone().pop()).ok().unwrap_or(None);
                             }
                             let user_payer: Option<i32>;
                             {
                                 info!("Loading payer info...");
                                 use schema::payer::dsl::*;
-                                user_payer = self.user_dao.load_payer_id(u.id).map(|s| s.clone().pop()).ok().unwrap_or(None);
+                                user_payer = self.user_dao.load_payer_id(u.id, &conn).map(|s| s.clone().pop()).ok().unwrap_or(None);
                             }
 
                             info!("Setting session...");

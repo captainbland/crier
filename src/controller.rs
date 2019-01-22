@@ -171,15 +171,14 @@ fn post_login(req: &mut Request) -> IronResult<Response> {
     let _response: String = String::from("");
     match user_form.validate() {
         Ok(_) => {
-
+            info!("About to retrieve connection...");
             let res: Result<Response, IronError> = (req.extensions.get::<DatabaseExtension>())
-                .map(|p| p.get())
-                .and_then(|res| res.ok() )
+                .map(|p| p.get().expect("Need a connection"))
                 .and_then(|con| {
 
                     let session: &mut Session = req.session();
 
-                    let user_res = user_service.login( &user_form, session);
+                    let user_res = user_service.login( con, &user_form, session);
                     let result = match user_res {
                         Ok(_user) => (Ok(Response::with((status::Ok, render_page("Thanks for logging in!", &navbar_info,html!{("Thank you, ") (user_form.username)}))))),
                         Err(e) => {
@@ -208,7 +207,7 @@ fn get_stripe_onboarding_url(req: &mut Request) -> IronResult<Response> {
         _ => return Ok(Response::with((status::InternalServerError, "oh poo")))
     };
 
-    let redirect_url = format!("https://connect.stripe.com/oauth/authorize?response_type=code&client_id={}&scope=read_write&redirect_uri={}{}", stripe_client_id, "http://localhost:3000/stripe/onboarding_redirect","");
+    let redirect_url = format!("https://connect.stripe.com/oauth/authorize?response_type=code&client_id={}&scope=read_write&redirect_uri={}{}", stripe_client_id, &format!("{}/stripe/onboarding_redirect", get_hostname())[..],"");
     match Url::parse(redirect_url.as_str()) {
         Ok(url) => Ok(Response::with((status::Found, Redirect(url)))),
         _ => return Ok(Response::with((status::InternalServerError, "welp")))
@@ -305,12 +304,51 @@ fn post_create_listing_form(req: &mut Request) -> IronResult<Response> {
     let listing_form: ListingForm = itry!(serde_urlencoded::from_reader(req.body.by_ref()));
     match listing_form.validate() {
         Ok(_) => {
-            with_connection!(req, |con| Some(stripe_service.create_listing(con, listing_form)))
+            with_connection!(req, |con| Some(stripe_service.create_listing(con, listing_form, seller_id)))
                 .map(|_val| Ok(Response::with((iron::status::Ok, render_page("You have created a listing!", &navbar_info, html!{})))))
                 .unwrap_or(Ok(Response::with((iron::status::InternalServerError, render_page("Could not create listing", &navbar_info, html!{})))))
         }
         Err(e) => {
             Ok(Response::with((status::BadRequest, render_create_listing_form(&navbar_info, &e))))
+        }
+    }
+}
+
+fn get_listing(req: &mut Request) -> IronResult<Response> {
+
+    //let query = { req.extensions.get::<Router>().unwrap().find("id") };
+    let navbar_info = calculate_navbar_info(req.session());
+
+
+    let query;
+    {
+        query  = req.extensions.get::<Router>().unwrap().find("id").clone();
+    };
+
+    let stripe_service = StripeService::new();
+    info!("Query: {:?}", query);
+
+    match query {
+        Some(listing_id) => {
+            let listing_id = listing_id.parse().expect("listing must be i32");
+            with_connection!(req, |con| {
+
+                match stripe_service.get_listing(con, listing_id) {
+                    Ok(listing) => {
+                        let mut qr_service = QRService::new();
+
+                        let qr_code = qr_service.create_svg_data(format!("{}/{}", get_hostname(), listing.id).as_ref());
+                        Some(Ok(Response::with((status::Ok, render_listing(&navbar_info, listing, qr_code.unwrap_or_default())))))
+                    },
+
+                    _ => {
+                        Some(Ok(Response::with((status::NotFound, render_page("Could not find this listing", &navbar_info, html!{})))))
+                    }
+                }
+            }).unwrap_or(Ok(Response::with((status::NotFound, "there was a problem retrieving the listing..."))))
+        },
+        _ => {
+            Ok(Response::with((status::NotFound, "There's nothing here...")))
         }
     }
 }
@@ -329,6 +367,11 @@ pub fn get_router() -> Router {
         stripe_payee_form: get "/stripe/payer_signup" => get_stripe_payer_signup_form,
         stripe_payee_form: post "/stripe/payer_signup" => post_stripe_payer_signup_form,
         create_listing_form: get "/create_listing" => get_create_listing_form,
-        create_listing_form: post "/create_listing" => post_create_listing_form
+        create_listing_form: post "/create_listing" => post_create_listing_form,
+        listing: get "/listing/:id" => get_listing
     )
+}
+
+pub fn get_hostname() -> String {
+    env::var("HOSTNAME").expect("Hostname must be set in the environment")
 }

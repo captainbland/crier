@@ -25,10 +25,18 @@ pub struct PayerForm {
     pub email: String
 }
 
-#[derive(Insertable, Queryable)]
+#[derive(Insertable)]
 #[table_name="payer"]
 pub struct PayerEntry {
     pub crier_user_id: i32,
     pub service_customer_id: String,
     pub service_payment_source: String
+}
+
+#[derive(Queryable, Clone)]
+pub struct Payer {
+    id: i32,
+    crier_user_id: i32,
+    service_customer_id: Option<String>,
+    service_payment_source: String
 }

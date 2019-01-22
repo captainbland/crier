@@ -7,10 +7,10 @@ $(java -Dwebdriver.chrome.driver=/usr/bin/chromedriver -jar ~/selenium-server-st
 #uncomment for xvfb headless: (. xvfb-run -a java -Dwebdriver.chrome.driver=/usr/bin/chromedriver -jar ~/selenium-server-standalone.jar) &
 xvproc=$!
 selproc=$(lsof -t -i :4444)
-export DATABASE_URL='postgres://root:password@127.0.0.1/criertest'
+export DATABASE_URL='postgres://postgres:password@127.0.0.1/criertest'
 export RUST_BACKTRACE=1
 diesel database reset
-cargo run crier --release &
+cargo run --package crier --bin crier --release &
 crierproc=$!
 
 sleep 2

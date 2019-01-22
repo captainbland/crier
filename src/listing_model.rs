@@ -22,18 +22,30 @@ pub struct ListingForm {
     pub currency: String
 }
 
-#[derive(Insertable, Queryable)]
+#[derive(Insertable)]
 #[table_name="listing"]
-pub struct Listing {
+pub struct ListingCreation {
     pub title: String,
     pub cost: i32,
     pub limited_amount: bool,
-    pub currency: String
+    pub currency: String,
+    pub seller_id: i32
 }
 
-impl Into<Listing> for ListingForm {
-    fn into(self) -> Listing {
+#[derive(Queryable, Clone, Debug)]
+pub struct Listing {
+    pub id: i32,
+    pub seller_id: i32,
+    pub title: String,
+    pub cost: i32,
+    pub currency: String,
+    pub amount: Option<i32>,
+    pub limited_amount: Option<bool>
+}
+
+impl Into<ListingCreation> for ListingForm {
+    fn into(self) -> ListingCreation {
         let cost = self.cost.replace(".", "").parse::<i32>().unwrap_or_default();
-        Listing {title: self.title, cost, limited_amount: false, currency: self.currency}
+        ListingCreation {title: self.title, cost, limited_amount: false, currency: self.currency, seller_id: -1}
     }
 }

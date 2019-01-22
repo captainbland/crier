@@ -28,7 +28,9 @@ impl R2D2Middleware {
         info!("Database URL: {}", database_url);
         let manager = ConnectionManager::<PgConnection>::new(database_url);
 
-        let pool = Pool::builder().max_size(15).build(manager).expect("Failed to create pool - is your database available?.");
+        let pool = Pool::builder().min_idle(Some(15)).max_size(30).test_on_check_out(true).build(manager).expect("Failed to create pool - is your database available?.");
+        info!("Pool info: {:?}", pool.state());
+        info!("Test on checkout: {:?}", pool.test_on_check_out());
         return R2D2Middleware{pool: Arc::new(pool)};
     }
 }

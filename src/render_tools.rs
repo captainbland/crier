@@ -10,6 +10,7 @@ fn header(page_title: &str) -> Markup {
         html {
             meta charset="utf-8";
             link rel="stylesheet" type="text/css" href="/static/thirdparty/css/bootstrap.css";
+            link rel="stylesheet" type="text/css" href="/static/css/styles.css";
             title { (page_title) }
         }
     }

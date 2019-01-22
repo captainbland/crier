@@ -25,7 +25,6 @@ use user_model::User;
 use type_wrappers::{DBConnection, Session};
 use listing_model::*;
 use user_service::UserDAOImpl;
-use db_connection::get_connection;
 
 pub struct StripeService {
     pub publishable_key: String,
@@ -74,7 +73,7 @@ impl StripeService {
                     user = self.user_service.get_user_from_session(user_session, &con)?;
                 }
 
-                let seller_entry = SellerCreation {
+                let seller_entry = SellerEntry {
                     crier_user_id: user.id,
                     publishable_key: String::from(publishable_key_value),
                     refresh_token: String::from(refresh_token_value),
@@ -83,7 +82,7 @@ impl StripeService {
                 };
 
 
-                let val = self.stripe_dao.create_seller(seller_entry);
+                let val = self.stripe_dao.create_seller(seller_entry, &con);
 
 
                 match val {
@@ -99,6 +98,7 @@ impl StripeService {
 
             _ => Err(String::from(""))
         }
+
     }
 
     pub fn onboard_payer(&self, con: DBConnection, payer_form: PayerForm, user_session: UserSession, session: &mut Session) -> std::result::Result<i32, String>  {
@@ -124,7 +124,7 @@ impl StripeService {
         }).map(|args| {
 
             let (_cust, payer_entry, payer) = args;
-            let returned = self.stripe_dao.create_payer(payer_entry);
+            let returned = self.stripe_dao.create_payer(payer_entry, &con);
 
             match returned {
                 Ok(Some(payer_id)) => {
@@ -138,28 +138,31 @@ impl StripeService {
         }).unwrap_or_else(|e|Err(format!("There was a problem creating a customer with stripe: {:?}", e)))
     }
 
-    pub fn create_listing(&self, con: DBConnection, listing_form: ListingForm) -> Result<i32, String> {
-        use schema::listing::dsl::*;
-        let listing_creation: Listing = listing_form.into();
+    pub fn create_listing(&self, con: DBConnection, listing_form: ListingForm, sellerid: i32) -> Result<i32, String> {
+        let mut listing_creation: ListingCreation = listing_form.into();
+        listing_creation.seller_id = sellerid;
+        self.stripe_dao.create_listing(listing_creation, &con)
+    }
 
-        let ret = insert_into(listing)
-            .values(listing_creation)
-            .returning(id)
-            .get_results::<i32>(&con)
-            .map_err(|e| {
-                info!("WARN: there was a database error creating listing from form: {:?}", e);
-                format!("There was a problem creating listing information")
-            }).map(|v| v.clone().pop().unwrap());
-            //.unwrap_or_else(|e| Err(format!("There was a problem creating a listing: {:?}", e)));
+    pub fn get_listing(&self, con: DBConnection, listing_id: i32) -> Result<Listing, String>  {
+        let res = self.stripe_dao.get_listing(listing_id, &con);
+        info!("listing: {:?}", res);
+        res
+    }
 
-        ret
+    pub fn pay_listing(&self, con: DBConnection, payer_user_id: i32, listing_id: i32) -> Result<String, String> {
+        unimplemented!()
     }
 }
 
 pub trait StripeDAO {
-    fn create_seller(&self, seller_entry: SellerCreation) -> Result<Option<i32>, String>;
-    fn create_payer(&self, payer: PayerEntry) -> Result<Option<i32>, String>;
-    fn create_listing(&self, listing: Listing) -> Result<i32, String>;
+    fn create_seller(&self, seller_entry: SellerEntry, conn: &DBConnection) -> Result<Option<i32>, String>;
+    fn create_payer(&self, payer: PayerEntry, conn: &DBConnection) -> Result<Option<i32>, String>;
+    fn create_listing(&self, listing: ListingCreation, conn: &DBConnection) -> Result<i32, String>;
+    fn get_listing(&self, listing_id: i32, conn: &DBConnection) -> Result<Listing, String>;
+
+    fn get_payer_by_user_id(&self, payer_user_id: i32, conn: &DBConnection) -> Result<Payer, String>;
+    fn get_seller(&self, seller_id: i32, conn: &DBConnection) -> Result<Seller, String>;
 }
 
 pub struct StripeDAOImpl {}
@@ -170,33 +173,71 @@ impl StripeDAOImpl {
 }
 
 impl StripeDAO for StripeDAOImpl {
-    fn create_seller(&self, seller_entry: SellerCreation) -> Result<Option<i32>, String> {
+    fn create_seller(&self, seller_entry: SellerEntry, conn: &DBConnection) -> Result<Option<i32>, String> {
         use schema::seller::dsl::*;
 
         insert_into(seller)
             .values(seller_entry)
             .returning(id)
-            .get_results(&get_connection())
+            .get_results(conn)
             .map_err(|e| {
                 info!("WARN: there was an error inserting seller information {:?}", e);
                 format!("Could not insert seller information: {:?}", e)
             }).map(|v| v.clone().pop())
     }
 
-    fn create_payer(&self, payer_entry: PayerEntry) -> Result<Option<i32>, String> {
+    fn create_payer(&self, payer_entry: PayerEntry, conn: &DBConnection) -> Result<Option<i32>, String> {
         use schema::payer::dsl::*;
 
         insert_into(payer)
             .values(payer_entry)
             .returning(id)
-            .get_results(&get_connection())
+            .get_results(conn)
             .map_err(|e| {
                 info!("WARN: there was an error inserting seller information {:?}", e);
                 format!("Could not insert seller information: {:?}", e)
             }).map(|v| v.clone().pop())
     }
 
-    fn create_listing(&self, listing: Listing) -> Result<i32, String> {
-        unimplemented!()
+    fn create_listing(&self, listing_creation: ListingCreation, conn: &DBConnection) -> Result<i32, String> {
+        use schema::listing::dsl::*;
+
+        insert_into(listing)
+            .values(listing_creation)
+            .returning(id)
+            .get_results::<i32>(conn).map_err(|e| {
+            info!("WARN: there was a database error creating listing from form: {:?}", e);
+            format!("There was a problem creating listing information")
+        }).map(|v| v.clone().pop().unwrap())
+    }
+
+    fn get_listing(&self, listing_id: i32, conn: &DBConnection) -> Result<Listing, String> {
+        use schema::listing::dsl::*;
+        match listing.filter(id.eq(listing_id))
+            .load::<Listing>(conn)
+            .map(|v| v.clone().pop()) {
+            Ok(Some(res)) => Ok(res),
+            _ => Err(String::from("Could not get listing"))
+        }
+    }
+
+    fn get_payer_by_user_id(&self, payer_user_id: i32, conn: &DBConnection) -> Result<Payer, String> {
+        use schema::payer::dsl::*;
+        match payer.filter(crier_user_id.eq(payer_user_id))
+            .load::<Payer>(conn)
+            .map(|v| v.clone().pop()) {
+            Ok(Some(res)) => Ok(res),
+            _ => Err(String::from("Could not get payer"))
+        }
+    }
+
+    fn get_seller(&self, seller_id: i32, conn: &DBConnection) -> Result<Seller, String> {
+        use schema::seller::dsl::*;
+        match seller.filter(id.eq(seller_id))
+            .load::<Seller>(conn)
+            .map(|v| v.clone().pop()) {
+            Ok(Some(res)) => Ok(res),
+            _ => Err(String::from("Could not get seller"))
+        }
     }
 }
