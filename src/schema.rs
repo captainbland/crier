@@ -43,9 +43,4 @@ joinable!(listing -> seller (seller_id));
 joinable!(payer -> crier_user (crier_user_id));
 joinable!(seller -> crier_user (crier_user_id));
 
-allow_tables_to_appear_in_same_query!(
-    crier_user,
-    listing,
-    payer,
-    seller,
-);
+allow_tables_to_appear_in_same_query!(crier_user, listing, payer, seller,);

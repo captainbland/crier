@@ -4,51 +4,66 @@ use diesel::{
     pg::PgConnection,
     prelude::*,
     r2d2::ConnectionManager,
-    result::{DatabaseErrorInformation, DatabaseErrorKind, DatabaseErrorKind::*, Error}
+    result::{DatabaseErrorInformation, DatabaseErrorKind, DatabaseErrorKind::*, Error},
 };
 use r2d2::PooledConnection;
 
-use schema::crier_user;
-use user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
-use user_model::UserSession;
-use type_wrappers::{DBConnection, Session};
-use seller_model::SellerEntry;
 use mock_derive::mock;
+use schema::crier_user;
+use seller_model::SellerEntry;
+use type_wrappers::{DBConnection, Session};
+use user_model::UserSession;
+use user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
 
-pub struct UserService<T: UserDAO>  {
-    user_dao: T
+pub struct UserService<T: UserDAO> {
+    user_dao: T,
 }
 
-impl <T: UserDAO + Default> UserService<T> {
+impl<T: UserDAO + Default> UserService<T> {
     pub fn new() -> UserService<T> {
-        UserService {user_dao: T::default() }
+        UserService {
+            user_dao: T::default(),
+        }
     }
 
     pub fn new_with_dao(user_dao: T) {
-        UserService {user_dao};
+        UserService { user_dao };
     }
 
-    pub fn create_user(&self, conn: DBConnection, register_form: &RegisterForm, session: &mut Session) -> Result<usize, String> {
-
+    pub fn create_user(
+        &self,
+        conn: DBConnection,
+        register_form: &RegisterForm,
+        session: &mut Session,
+    ) -> Result<usize, String> {
         let create_user: UserCreation = register_form.into();
 
         match self.user_dao.create_user(&create_user, &conn) {
-                Ok(res) => {
-                    session.set(UserSession {username: register_form.username.clone(), payer_id: None, seller_id: None });
-                    Ok(res)
-                },
-                Err(e) => self.handle_insert_error(register_form, e)
+            Ok(res) => {
+                session.set(UserSession {
+                    username: register_form.username.clone(),
+                    payer_id: None,
+                    seller_id: None,
+                });
+                Ok(res)
             }
+            Err(e) => self.handle_insert_error(register_form, e),
+        }
     }
 
-    pub fn login(&self, conn: DBConnection, login_form: &LoginForm, session: &mut Session) -> Result<User, String> {
-
-
+    pub fn login(
+        &self,
+        conn: DBConnection,
+        login_form: &LoginForm,
+        session: &mut Session,
+    ) -> Result<User, String> {
         info!("Logging in!");
-        let login_query:LoginQuery = login_form.into();
+        let login_query: LoginQuery = login_form.into();
 
         let user: Result<User, String> = match self.user_dao.load_user(&login_query, &conn) {
-            Ok(res) => res.clone().pop()
+            Ok(res) => res
+                .clone()
+                .pop()
                 .and_then(|u| {
                     info!("USer exists!");
                     match verify(login_form.password.as_str(), u.password.as_str()) {
@@ -57,37 +72,60 @@ impl <T: UserDAO + Default> UserService<T> {
                             {
                                 info!("Loading seller info...");
                                 use schema::seller::dsl::*;
-                                user_seller = self.user_dao.load_seller_id(u.id, &conn).map(|s| s.clone().pop()).ok().unwrap_or(None);
+                                user_seller = self
+                                    .user_dao
+                                    .load_seller_id(u.id, &conn)
+                                    .map(|s| s.clone().pop())
+                                    .ok()
+                                    .unwrap_or(None);
                             }
                             let user_payer: Option<i32>;
                             {
                                 info!("Loading payer info...");
                                 use schema::payer::dsl::*;
-                                user_payer = self.user_dao.load_payer_id(u.id, &conn).map(|s| s.clone().pop()).ok().unwrap_or(None);
+                                user_payer = self
+                                    .user_dao
+                                    .load_payer_id(u.id, &conn)
+                                    .map(|s| s.clone().pop())
+                                    .ok()
+                                    .unwrap_or(None);
                             }
 
                             info!("Setting session...");
-                            session.set(UserSession {username: login_query.username.clone(), seller_id: user_seller, payer_id: user_payer });
+                            session.set(UserSession {
+                                username: login_query.username.clone(),
+                                seller_id: user_seller,
+                                payer_id: user_payer,
+                            });
                             info!("Set session");
 
                             Some(Ok(u))
-                        },
-                        _ => Some(Err(String::from("Could not log you in")))
+                        }
+                        _ => Some(Err(String::from("Could not log you in"))),
                     }
                 })
                 .unwrap_or(Err(String::from("Could not log you in"))),
-            Err(_e) => Err(String::from("User details not found"))
+            Err(_e) => Err(String::from("User details not found")),
         };
 
         return user;
-
     }
 
-    pub fn get_user_from_session(&self, user_session: &UserSession, conn: &DBConnection) -> Result<User, String> {
+    pub fn get_user_from_session(
+        &self,
+        user_session: &UserSession,
+        conn: &DBConnection,
+    ) -> Result<User, String> {
         use schema::crier_user::dsl::*;
-        crier_user.filter(username.eq(user_session.username.clone())).limit(1)
+        crier_user
+            .filter(username.eq(user_session.username.clone()))
+            .limit(1)
             .load::<User>(conn)
-            .map(|vec| vec.clone().pop().ok_or(format!("There was no user {}", user_session.username)))
+            .map(|vec| {
+                vec.clone()
+                    .pop()
+                    .ok_or(format!("There was no user {}", user_session.username))
+            })
             .unwrap_or(Err(String::from("Could not load user")))
     }
 
@@ -96,28 +134,38 @@ impl <T: UserDAO + Default> UserService<T> {
 
         match e {
             Error::DatabaseError(UniqueViolation, info) => {
-                let res = info.constraint_name().and_then(|s| {
+                let res = info
+                    .constraint_name()
+                    .and_then(|s| {
+                        if String::from(s).contains("username") {
+                            return Some(format!(
+                                "This username {} has already been used please try again.",
+                                register_form.username
+                            ));
+                        } else if String::from(s).contains("email") {
+                            return Some(format!(
+                                "This email {} has already been used please try again.",
+                                register_form.email
+                            ));
+                        }
 
-                    if String::from(s).contains("username") {
-                        return Some(format!("This username {} has already been used please try again.", register_form.username));
-                    } else if String::from(s).contains("email") {
-                        return Some(format!("This email {} has already been used please try again.", register_form.email));
-                    }
-
-                    None
-                }).unwrap_or(String::from("UNKNOWN PLEASE REPORT THIS"));
+                        None
+                    })
+                    .unwrap_or(String::from("UNKNOWN PLEASE REPORT THIS"));
                 return Err(res);
-            },
-            _ => {
-                Err(String::from("There was a problem processing your registration. Please try again later"))
             }
+            _ => Err(String::from(
+                "There was a problem processing your registration. Please try again later",
+            )),
         }
     }
 
-
-    pub fn get_integrations_for_user(&self, _con: PooledConnection<ConnectionManager<PgConnection>>, _user: User) {
+    pub fn get_integrations_for_user(
+        &self,
+        _con: PooledConnection<ConnectionManager<PgConnection>>,
+        _user: User,
+    ) {
         use schema::payer::dsl::*;
-
     }
 }
 
@@ -129,7 +177,6 @@ pub trait UserDAO {
     fn load_payer_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>>;
 }
 
-
 #[cfg(not(test))]
 #[derive(Default)]
 #[cfg(not(test))]
@@ -140,9 +187,7 @@ impl UserDAO for UserDAOImpl {
     fn create_user(&self, create_user: &UserCreation, conn: &DBConnection) -> QueryResult<usize> {
         use schema::crier_user::dsl::*;
 
-        insert_into(crier_user)
-            .values(create_user)
-            .execute(conn)
+        insert_into(crier_user).values(create_user).execute(conn)
     }
 
     fn load_user(&self, login_query: &LoginQuery, conn: &DBConnection) -> QueryResult<Vec<User>> {
@@ -156,12 +201,20 @@ impl UserDAO for UserDAOImpl {
 
     fn load_seller_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>> {
         use schema::seller::dsl::*;
-        seller.select(id).filter(crier_user_id.eq(user_id)).distinct().load::<i32>(conn)
+        seller
+            .select(id)
+            .filter(crier_user_id.eq(user_id))
+            .distinct()
+            .load::<i32>(conn)
     }
 
     fn load_payer_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>> {
         use schema::payer::dsl::*;
-         payer.select(id).filter(crier_user_id.eq(user_id)).distinct().load::<i32>(conn)
+        payer
+            .select(id)
+            .filter(crier_user_id.eq(user_id))
+            .distinct()
+            .load::<i32>(conn)
     }
 }
 

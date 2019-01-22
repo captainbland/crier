@@ -6,7 +6,8 @@ extern crate core;
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate env_logger;
 #[macro_use]
 extern crate iron;
@@ -37,28 +38,27 @@ extern crate validator_derive;
 #[macro_use]
 extern crate mock_derive;
 
-
 use application::run;
 
+pub mod controller;
 pub mod index_view;
-pub mod user_view;
+pub mod listing_model;
+pub mod payer_model;
 pub mod qr_service;
 pub mod qr_view;
+pub mod render_tools;
+pub mod seller_model;
+pub mod stripe_service;
+pub mod stripe_view;
+pub mod type_wrappers;
 pub mod user_model;
 pub mod user_service;
-pub mod stripe_service;
-pub mod controller;
-pub mod seller_model;
-pub mod render_tools;
-pub mod stripe_view;
-pub mod payer_model;
-pub mod type_wrappers;
-pub mod listing_model;
+pub mod user_view;
 
 pub mod schema;
 
-pub mod r2d2_middleware;
 pub mod navbar_info;
+pub mod r2d2_middleware;
 
 pub mod application;
 

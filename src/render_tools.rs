@@ -66,7 +66,12 @@ pub fn render_page(title: &str, navbar_info: &NavbarInfo, contents: Markup) -> M
     render_page_with_scripts(title, navbar_info, contents, vec![])
 }
 
-pub fn render_page_with_scripts(title: &str, navbar_info: &NavbarInfo, contents: Markup, scripts: Vec<&str>) -> Markup {
+pub fn render_page_with_scripts(
+    title: &str,
+    navbar_info: &NavbarInfo,
+    contents: Markup,
+    scripts: Vec<&str>,
+) -> Markup {
     html! {
         (header(title))
         body {
@@ -88,7 +93,12 @@ pub fn render_page_with_scripts(title: &str, navbar_info: &NavbarInfo, contents:
     }
 }
 
-pub fn render_input(label: &str, name: &str, input_type: &str, errors: &ValidationErrors) -> Markup {
+pub fn render_input(
+    label: &str,
+    name: &str,
+    input_type: &str,
+    errors: &ValidationErrors,
+) -> Markup {
     html! {
         div {
             label for=(name) { (label) }
@@ -101,7 +111,7 @@ pub fn render_input(label: &str, name: &str, input_type: &str, errors: &Validati
 }
 
 pub fn render_currency_input(label: &str, name: &str, errors: &ValidationErrors) -> Markup {
-    html!{
+    html! {
         div {
             label for=(name) { (label) }
             br;
@@ -120,12 +130,14 @@ fn cat_errors_for_field(errors: &ValidationErrors, name: &str) -> String {
     info!("Errors: {:?}", errors);
     info!("Name: {}", name);
     let error_strings: Vec<String> = match errors.clone().field_errors().get(name) {
-        Some(some_errs) => some_errs.iter()
+        Some(some_errs) => some_errs
+            .iter()
             .map(|e| e.to_owned().message.map(|m| String::from(m)))
             .filter(Option::is_some)
-            .map(Option::unwrap).collect(),
+            .map(Option::unwrap)
+            .collect(),
 
-        _ => return String::from("")
+        _ => return String::from(""),
     };
     info!("Errors: {:?}", error_strings);
     error_strings.join(", ")
