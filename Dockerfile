@@ -10,4 +10,4 @@ RUN rustup default nightly
 RUN cargo install --path .
 RUN cargo install diesel_cli --no-default-features --features "postgres"
 RUN chmod +x runapp.sh
-CMD ["runapp.sh"]
+CMD ["./runapp.sh"]
