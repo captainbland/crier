@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Dockerify & deploy
           command: |
-            echo $ID_RSA > ~/.ssh/id_rsa
+            echo $ID_RSA > circle_rsa
             chmod 600 ~/.ssh/id_rsa
             ssh-keyscan -H synthetic.services >> ~/.ssh/known_hosts
             set -x
@@ -43,4 +43,4 @@ jobs:
             tar -xz -C /tmp -f /tmp/docker-$VER.tgz
             mv /tmp/docker/* /usr/bin
             docker build --file DockerfileBin .
-            docker save $(docker images -q | head -1) | ssh circle@synthetic.services "dokku tar:in codepaydemo"
+            docker save $(docker images -q | head -1) | ssh circle@synthetic.services -i circle_rsa "dokku tar:in codepaydemo"
