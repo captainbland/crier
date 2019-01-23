@@ -9,8 +9,9 @@ jobs:
           keys:
               - target-
               - cargo-
+
       - setup_remote_docker:
-        docker_layer_caching: true # (3)
+          docker_layer_caching: true # (3)
 
       - run:
           name: Build
