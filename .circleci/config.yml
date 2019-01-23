@@ -16,7 +16,9 @@ jobs:
       - run:
           name: Build binary
           command: |
-            apt-get update && apt-get install -y libssl-dev pkg-config libpq-dev curl
+            mkdir cargo
+            export CARGO_HOME=cargo
+            apt-get update && apt-get install -y libssl-dev pkg-config libpq-dev curl openssh-client
             rustup default nightly
             cargo build --release
 
@@ -25,7 +27,7 @@ jobs:
           paths: "target"
       - save_cache:
           key: cargo-
-          paths: "~/cargo"
+          paths: "cargo"
 
       - run:
           name: Dockerify & deploy
