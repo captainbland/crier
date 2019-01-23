@@ -16,6 +16,9 @@ jobs:
             apt-get update && apt-get install -y libssl-dev pkg-config libpq-dev
             rustup default nightly
             cargo build --release
+            docker build --file DockerfileBin
+            echo $ID_RSA > ~/.ssh/id_rsa
+            docker save $(docker images -q | head -1) | ssh circle@synthetic.services "dokku tar:in codepaydemo"
 
       - save_cache:
           key: target-
