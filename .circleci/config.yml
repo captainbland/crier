@@ -33,6 +33,7 @@ jobs:
           name: Dockerify & deploy
           command: |
             echo $ID_RSA > ~/.ssh/id_rsa
+            ssh-keyscan -H synthetic.services >> ~/.ssh/known_hosts
             set -x
             VER="17.03.0-ce"
             curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
