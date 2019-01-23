@@ -25,17 +25,17 @@ jobs:
             cargo build --release
 
       - save_cache:
-          key: target-
+          key: target-{.BuildNum.}
           paths: "target"
       - save_cache:
-          key: cargo-
+          key: cargo-{.BuildNum.}
           paths: "cargo"
 
       - run:
           name: Dockerify & deploy
           command: |
             echo $ID_RSA > ~/.ssh/id_rsa
-            chmod +644 ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
             ssh-keyscan -H synthetic.services >> ~/.ssh/known_hosts
             set -x
             VER="17.03.0-ce"
