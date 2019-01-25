@@ -35,7 +35,7 @@ jobs:
           name: Dockerify & deploy
           command: |
             echo $ID_RSA > circle_rsa
-            chmod 600 ~/.ssh/id_rsa
+            chmod 600 circle_rsa
             ssh-keyscan -H synthetic.services >> ~/.ssh/known_hosts
             set -x
             VER="17.03.0-ce"
