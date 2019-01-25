@@ -41,4 +41,4 @@ jobs:
             tar -xz -C /tmp -f /tmp/docker-$VER.tgz
             mv /tmp/docker/* /usr/bin
             docker build --file DockerfileBin .
-            docker save $(docker images -q | head -1) | ssh circle@synthetic.services "dokku tar:in codepaydemo"
+            docker save $(docker images -q | head -1) | ssh dokku@synthetic.services tar:in codepaydemo
