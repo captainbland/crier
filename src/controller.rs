@@ -37,6 +37,7 @@ use type_wrappers::*;
 use user_model::*;
 use user_service::*;
 use user_view::*;
+use payment_model::PayForm;
 
 #[macro_use]
 mod controller_macros {
@@ -80,6 +81,23 @@ mod controller_macros {
                 )));
             } else {
                 $user_session.seller_id.unwrap()
+            }
+        };
+    }
+
+    macro_rules! assert_payer {
+        ($user_session:expr, $navbar_info:expr) => {
+            if $user_session.payer_id.is_none() {
+                return Ok(Response::with((
+                    status::Unauthorized,
+                    render_page(
+                        "You must be a payer to pay for listings",
+                        $navbar_info,
+                        html! {},
+                    ),
+                )));
+            } else {
+                $user_session.payer_id.unwrap()
             }
         };
     }
@@ -484,10 +502,24 @@ pub fn make_payment(req: &mut Request) -> IronResult<Response> {
         user_session = assert_login!(req.session(), &navbar_info).unwrap();
     }
 
-    Ok(Response::with((
-        status::Ok,
-        "This is where you would make a payment?",
-    )))
+    let payer_id = assert_payer!(user_session, &navbar_info);
+    let pay_form: PayForm = itry!(serde_urlencoded::from_reader(req.body.by_ref()));
+    let stripe_service = StripeService::new();
+
+    let payer_id = user_session.payer_id.expect("need a payer id");
+    let pay_result =  with_connection!(req, |con| {
+        Some(stripe_service.pay_listing(con, payer_id, pay_form.listing_id))
+    });
+
+
+    match pay_result {
+        Some(Ok(res)) => Ok(Response::with((
+            status::Ok,
+            "Created the payment",
+        ))),
+        _ => Ok(Response::with((status::BadRequest, "Could not process your payment")))
+    }
+
 }
 
 pub fn get_router() -> Router {

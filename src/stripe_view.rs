@@ -63,6 +63,7 @@ pub fn render_listing(navbar_info: &NavbarInfo, listing: Listing, qr_data: Strin
             ("Pay code: ") br;
 
             form.form-group method="POST" action="/make_payment" {
+                input type="hidden" id="listing_id" value=(listing.id) name="listing_id";
                 input.btn.btn-primary type=("submit") id="submit" value="Pay for this!";
             }
 

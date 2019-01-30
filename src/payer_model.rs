@@ -47,8 +47,9 @@ pub struct PayerEntry {
 
 #[derive(Queryable, Clone)]
 pub struct Payer {
-    id: i32,
-    crier_user_id: i32,
-    service_customer_id: Option<String>,
-    service_payment_source: String,
+    pub id: i32,
+    pub crier_user_id: i32,
+    pub service_customer_id: Option<String>,
+    pub service_payment_source: String,
 }
+

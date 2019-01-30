@@ -61,6 +61,7 @@ pub mod navbar_info;
 pub mod r2d2_middleware;
 
 pub mod application;
+pub mod payment_model;
 
 pub fn main() {
     run();

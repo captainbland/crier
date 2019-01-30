@@ -6,7 +6,7 @@ function stripeInit(pk) {
     elements = stripe.elements();
 }
 
-stripeInit("pk_test_dpoNF38dtaRvXrJQ1T4vDRcb");
+stripeInit("pk_test_GwDpi8hDOrfJqB4SHHkIWvXC");
 
 window.onload = function() {
     var form = document.getElementById('payment-form');

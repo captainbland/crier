@@ -7,7 +7,11 @@ use r2d2::Pool;
 use r2d2::PooledConnection;
 use reqwest::*;
 use serde_json;
-use stripe::*;
+use stripe::{
+    *,
+    Error,
+
+};
 use user_model::UserSession;
 
 use diesel::insert_into;
@@ -16,11 +20,12 @@ use payer_model::PayerForm;
 use payer_model::*;
 use seller_model::*;
 use std::str::FromStr;
-use stripe::Error;
 use type_wrappers::{DBConnection, Session};
 use user_model::User;
 use user_service::UserDAOImpl;
 use user_service::UserService;
+use std::num;
+use diesel::pg::Pg;
 
 pub struct StripeService {
     pub publishable_key: String,
@@ -138,8 +143,8 @@ impl StripeService {
         let customer_params_description = "A customer of some description";
         customer_params.description = Some(customer_params_description);
         let client = stripe::Client::new(self.secret_key.as_ref());
-        stripe::Customer::create(&client, customer_params)
-            .and_then(|cust| {
+        match stripe::Customer::create(&client, customer_params) {
+            Ok(cust) => {
                 let user = self
                     .user_service
                     .get_user_from_session(&user_session, &con)
@@ -152,10 +157,7 @@ impl StripeService {
                 };
 
                 info!("Customer created: {:?}", cust.clone());
-                Ok((cust, payer_entry, payer))
-            })
-            .map(|args| {
-                let (_cust, payer_entry, payer) = args;
+
                 let returned = self.stripe_dao.create_payer(payer_entry, &con);
 
                 match returned {
@@ -167,13 +169,17 @@ impl StripeService {
                     }
                     _ => Err(String::from("Cannot get payerId")),
                 }
-            })
-            .unwrap_or_else(|e| {
+            }
+            ,
+
+            Err(e) => {
+                warn!("Error creating payer: {:?}", e);
                 Err(format!(
                     "There was a problem creating a customer with stripe: {:?}",
-                    e
+                    "unknown, lazy developer"
                 ))
-            })
+            }
+        }
     }
 
     pub fn create_listing(
@@ -193,15 +199,46 @@ impl StripeService {
         res
     }
 
-//    pub fn pay_listing(
-//        &self,
-//        con: DBConnection,
-//        payer_user_id: i32,
-//        listing_id: i32,
-//    ) -> Result<String, String> {
-//        self.stripe_dao.get_payer_by_user_id(payer_user_id, &con);
-//        self.stripe_dao.get_listing(listing_id, &con);
-//    }
+    pub fn pay_listing(
+        &self,
+        con: DBConnection,
+        payer_id: i32,
+        listing_id: i32,
+    ) -> Result<String, String> {
+        let payer =self.stripe_dao.get_payer(payer_id, &con).expect("Need to be able to load a payer");
+        let listing = self.stripe_dao.get_listing(listing_id, &con).expect("Must be able to load listing");
+        let seller_id = listing.seller_id;
+        let seller = self.stripe_dao.get_seller(seller_id, &con).expect("Must be able to load Seller");
+        let client = stripe::Client::new(self.secret_key.as_ref());
+
+        let mut charge_params = stripe::ChargeParams::default();
+        //let source = stripe::Source::get(&client, payer.service_payment_source.as_str()).expect("Need psayment source");
+        let currency = Some(stripe::Currency::from_str(listing.currency.to_lowercase().as_str()).expect("Need a valid currency"));
+        charge_params.amount = Some(listing.cost as u64);
+        charge_params.currency = currency;
+        charge_params.customer = payer.service_customer_id;
+        let charge_amt = ((listing.cost as f64)*0.02) as u64;
+        let destination_amount = listing.cost as u64 - charge_amt;
+        let mut destination_params = DestinationParams {
+            account:  seller.service_id.as_str(),
+            amount:  destination_amount
+        };
+
+
+
+        charge_params.destination = Some(destination_params);
+        charge_params.description = Some(listing.title.as_str());
+
+        match stripe::Charge::create(&client, charge_params) {
+            Ok(_) => Ok(String::from("Payment was processed")),
+            Err(e) => {
+                warn!("There was a problem paying a payment {:?}", e);
+                Err(String::from("There was an error processing your payment"))
+            }
+        }
+
+
+    }
 }
 
 pub trait StripeDAO {
@@ -217,6 +254,13 @@ pub trait StripeDAO {
     fn get_payer_by_user_id(
         &self,
         payer_user_id: i32,
+        conn: &DBConnection,
+    ) -> Result<Payer, String>;
+
+
+    fn get_payer(
+        &self,
+        payer_id: i32,
         conn: &DBConnection,
     ) -> Result<Payer, String>;
     fn get_seller(&self, seller_id: i32, conn: &DBConnection) -> Result<Seller, String>;
@@ -259,10 +303,11 @@ impl StripeDAO for StripeDAOImpl {
     ) -> Result<Option<i32>, String> {
         use schema::payer::dsl::*;
 
-        insert_into(payer)
+        let q = insert_into(payer)
             .values(payer_entry)
-            .returning(id)
-            .get_results(conn)
+            .returning(id);
+        println!("payer query: {:?}", diesel::debug_query::<Pg,_>(&q));
+        q.get_results(conn)
             .map_err(|e| {
                 info!(
                     "WARN: there was an error inserting seller information {:?}",
@@ -320,6 +365,23 @@ impl StripeDAO for StripeDAOImpl {
             Ok(Some(res)) => Ok(res),
             _ => Err(String::from("Could not get payer")),
         }
+    }
+
+
+    fn get_payer(
+        &self,
+        payer_id: i32,
+        conn: &DBConnection,
+    ) -> Result<Payer, String> {
+        use schema::payer::dsl::*;
+        match payer
+            .filter(id.eq(payer_id))
+            .load::<Payer>(conn)
+            .map(|v| v.clone().pop())
+            {
+                Ok(Some(res)) => Ok(res),
+                _ => Err(String::from("Could not get payer")),
+            }
     }
 
     fn get_seller(&self, seller_id: i32, conn: &DBConnection) -> Result<Seller, String> {

@@ -14,6 +14,7 @@ use seller_model::SellerEntry;
 use type_wrappers::{DBConnection, Session};
 use user_model::UserSession;
 use user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
+use diesel::pg::Pg;
 
 pub struct UserService<T: UserDAO> {
     user_dao: T,
@@ -210,11 +211,12 @@ impl UserDAO for UserDAOImpl {
 
     fn load_payer_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>> {
         use schema::payer::dsl::*;
-        payer
+        let q = payer
             .select(id)
             .filter(crier_user_id.eq(user_id))
-            .distinct()
-            .load::<i32>(conn)
+            .distinct();
+        println!("payer query {:?}", diesel::debug_query::<Pg, _>(&q));
+        q.load::<i32>(conn)
     }
 }
 
