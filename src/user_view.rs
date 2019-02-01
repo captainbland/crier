@@ -1,9 +1,7 @@
 use maud::*;
 use crate::navbar_info::NavbarInfo;
 use crate::render_tools::*;
-use std::borrow::Cow;
-use std::borrow::ToOwned;
-use validator::{ValidationError, ValidationErrors};
+use validator::{ValidationErrors};
 
 pub fn render_registration_form(navbar_info: &NavbarInfo, errors: &ValidationErrors) -> Markup {
     render_page(

@@ -1,20 +1,16 @@
 use bcrypt::verify;
 use diesel::{
-    insert_into,
     pg::PgConnection,
     prelude::*,
     r2d2::ConnectionManager,
-    result::{DatabaseErrorInformation, DatabaseErrorKind, DatabaseErrorKind::*, Error},
+    result::{DatabaseErrorKind::*, Error},
 };
 use r2d2::PooledConnection;
 
 use mock_derive::mock;
-use crate::schema::crier_user;
-use crate::seller_model::SellerEntry;
 use crate::type_wrappers::{DBConnection, Session};
 use crate::user_model::UserSession;
 use crate::user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
-use diesel::pg::Pg;
 
 pub struct UserService<T: UserDAO> {
     user_dao: T,
@@ -45,7 +41,7 @@ impl<T: UserDAO + Default> UserService<T> {
                     username: register_form.username.clone(),
                     payer_id: None,
                     seller_id: None,
-                });
+                }).expect("Setting session");
                 Ok(res)
             }
             Err(e) => self.handle_insert_error(register_form, e),
@@ -72,7 +68,6 @@ impl<T: UserDAO + Default> UserService<T> {
                             let user_seller: Option<i32>;
                             {
                                 info!("Loading seller info...");
-                                use crate::schema::seller::dsl::*;
                                 user_seller = self
                                     .user_dao
                                     .load_seller_id(u.id, &conn)
@@ -83,7 +78,6 @@ impl<T: UserDAO + Default> UserService<T> {
                             let user_payer: Option<i32>;
                             {
                                 info!("Loading payer info...");
-                                use crate::schema::payer::dsl::*;
                                 user_payer = self
                                     .user_dao
                                     .load_payer_id(u.id, &conn)
@@ -97,7 +91,7 @@ impl<T: UserDAO + Default> UserService<T> {
                                 username: login_query.username.clone(),
                                 seller_id: user_seller,
                                 payer_id: user_payer,
-                            });
+                            }).expect("Setting session");
                             info!("Set session");
 
                             Some(Ok(u))

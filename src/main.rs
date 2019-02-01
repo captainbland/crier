@@ -1,6 +1,5 @@
 #![feature(plugin)]
 #![feature(proc_macro_hygiene)]
-#![feature(extern_prelude)]
 #![warn(unused_extern_crates)]
 
 #[macro_use]

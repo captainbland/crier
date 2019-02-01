@@ -1,17 +1,10 @@
 use std::env;
-use std::io::Read;
 use std::result::Result;
 
-use diesel::{pg::PgConnection, prelude::*, r2d2::ConnectionManager};
-use r2d2::Pool;
-use r2d2::PooledConnection;
+use diesel::prelude::*;
 use reqwest::*;
 use serde_json;
-use stripe::{
-    *,
-    Error,
-
-};
+use stripe::*;
 use crate::user_model::UserSession;
 
 use diesel::insert_into;
@@ -21,10 +14,8 @@ use crate::payer_model::*;
 use crate::seller_model::*;
 use std::str::FromStr;
 use crate::type_wrappers::{DBConnection, Session};
-use crate::user_model::User;
 use crate::user_service::UserDAOImpl;
 use crate::user_service::UserService;
-use std::num;
 use diesel::pg::Pg;
 use crate::payment_model::PaymentEntry;
 use crate::payment_model::Payment;
@@ -117,7 +108,7 @@ impl StripeService {
                     Ok(Some(value)) => {
                         let mut user_session_update = user_session.clone();
                         user_session_update.seller_id = Some(value);
-                        session.set(user_session_update);
+                        session.set(user_session_update).expect("Setting user session update");
                         Ok(value)
                     }
                     _ => Err(String::from("Could not create seller")),
@@ -135,7 +126,6 @@ impl StripeService {
         user_session: UserSession,
         session: &mut Session,
     ) -> std::result::Result<i32, String> {
-        #[macro_use] use crate::schema::payer::dsl::*;
 
         let mut customer_params = CustomerParams::default();
         let payment_source_params = PaymentSourceParams::Source(
@@ -166,7 +156,7 @@ impl StripeService {
                     Ok(Some(payer_id)) => {
                         let mut user_session_update = user_session.clone();
                         user_session_update.payer_id = Some(payer_id);
-                        session.set(user_session_update);
+                        session.set(user_session_update).expect("Setting session");
                         Ok(payer_id)
                     }
                     _ => Err(String::from("Cannot get payerId")),

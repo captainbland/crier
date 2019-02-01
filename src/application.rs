@@ -1,34 +1,15 @@
-use core::borrow::BorrowMut;
 use std::env;
-use std::io::Read;
 use std::path::Path;
-use std::string::String;
 
-use diesel::pg::PgConnection;
-use diesel::prelude::*;
 use dotenv::*;
-use iron::modifiers::Redirect;
 use iron::prelude::*;
-use iron::status;
-use iron::*;
 use iron_sessionstorage::backends::*;
-use iron_sessionstorage::traits::*;
-use iron_sessionstorage::Session;
 use iron_sessionstorage::SessionStorage;
 use logger::Logger;
-use maud::*;
 use mount::Mount;
-use params::{Params, Value};
-use router::Params as RouterParams;
-use router::Router;
-use serde_urlencoded::*;
 use staticfile::Static;
-use urlencoded::UrlEncodedQuery;
-use validator::*;
 
 use crate::controller;
-use crate::controller::*;
-use env_logger::*;
 use crate::r2d2_middleware;
 
 pub fn run() {

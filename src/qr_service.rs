@@ -1,4 +1,3 @@
-use lodepng::*;
 use qrcodegen::*;
 
 pub struct QRService {}

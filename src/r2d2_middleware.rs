@@ -1,13 +1,9 @@
-use std::any::Any;
-use std::borrow::Cow;
 use std::env;
 use std::sync::Arc;
 
-use core::borrow::Borrow;
 use diesel::pg::PgConnection;
 use diesel::r2d2::*;
-use dotenv::*;
-use iron::{middleware::BeforeMiddleware, typemap::Key, IronResult, Request, Response};
+use iron::{middleware::BeforeMiddleware, typemap::Key, IronResult, Request};
 use plugin::*;
 use r2d2::Pool;
 

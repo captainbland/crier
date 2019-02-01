@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use serde_derive::*;
 
 use validator::*;
@@ -5,6 +7,7 @@ use validator_derive::*;
 
 use diesel::{Insertable, Queryable};
 use crate::schema::*;
+
 
 #[derive(Deserialize, PartialEq, Eq, Debug, Validate)]
 pub struct PayerForm {

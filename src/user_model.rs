@@ -1,15 +1,13 @@
 use serde_derive::*;
-use serde_urlencoded::*;
 
 use validator::*;
 use validator_derive::*;
 
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{hash, DEFAULT_COST};
 use diesel::{Insertable, Queryable};
 use regex::*;
 use std::borrow::Cow;
 
-use iron_sessionstorage::Value;
 use crate::schema::crier_user;
 
 #[cfg(feature = "debug")]

@@ -1,14 +1,5 @@
-use serde_derive::*;
-use serde_urlencoded::*;
-
-use validator::*;
-use validator_derive::*;
-
 use diesel::{Insertable, Queryable};
-use regex::*;
 use crate::schema::*;
-use std::borrow::Cow;
-use crate::user_model::User;
 
 #[derive(Insertable)]
 #[table_name = "seller"]

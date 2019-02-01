@@ -24,7 +24,7 @@ use crate::user_model::*;
 use crate::user_service::*;
 use crate::user_view::*;
 use crate::payment_model::PayForm;
-use maud::html;
+use maud_macros::html;
 
 #[macro_use]
 mod controller_macros {
