@@ -116,7 +116,7 @@ fn test_003_onboard_seller() {
 
 #[test]
 fn test_004_onboard_payer() {
-    let mut driver = WebDriver::new(Browser::Chrome);
+    let driver = WebDriver::new(Browser::Chrome);
 
     driver.navigate("http://localhost:9080/stripe/onboard_payer");
     type_text(&driver, "#name", "someone")

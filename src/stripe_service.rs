@@ -369,10 +369,10 @@ impl StripeDAO for StripeDAOImpl {
         }
     }
 
-    fn get_payments_for_payer(&self, payer_id_: i32, con: &DBConnection) -> Result<Vec<Payment>, String> {
+    fn get_payments_for_payer(&self, payer_id_: i32, conn: &DBConnection) -> Result<Vec<Payment>, String> {
         use schema::payment::dsl::*;
-        match payment.filter(payer_id.eq(payer_id_))
-            .load::<Payment>(conn)
+        payment.filter(payer_id.eq(payer_id))
+            .load::<Payment>(conn).map_err(|e| String::from("Could not load payments for payer"))
 
     }
 

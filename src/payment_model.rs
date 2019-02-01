@@ -27,6 +27,7 @@ pub struct PaymentEntry {
 
 #[derive(Queryable)]
 pub struct Payment {
+    pub id: i32,
     pub payer_id: i32,
     pub seller_id: i32,
     pub listing_id: i32,
