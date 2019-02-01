@@ -10,7 +10,7 @@ use regex::*;
 use std::borrow::Cow;
 
 use iron_sessionstorage::Value;
-use schema::crier_user;
+use crate::schema::crier_user;
 
 #[cfg(feature = "debug")]
 static BLOWFISH_COST: u32 = 4;

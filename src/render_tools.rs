@@ -1,5 +1,5 @@
 use maud::*;
-use navbar_info::NavbarInfo;
+use crate::navbar_info::NavbarInfo;
 use validator::ValidationErrors;
 
 // This file contains various utility methods for rendering web pages with forms

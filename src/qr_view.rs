@@ -1,6 +1,6 @@
 use maud::*;
-use navbar_info::NavbarInfo;
-use render_tools::*;
+use crate::navbar_info::NavbarInfo;
+use crate::render_tools::*;
 
 pub fn render_qr(svg_data: String, navbar_info: &NavbarInfo) -> Markup {
     render_page(

@@ -38,7 +38,7 @@ extern crate validator_derive;
 #[macro_use]
 extern crate mock_derive;
 
-use application::run;
+use crate::application::run;
 
 pub mod controller;
 pub mod index_view;

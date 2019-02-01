@@ -6,7 +6,7 @@ use diesel::backend::Backend;
 use diesel::connection::Connection;
 use diesel::connection::TransactionManager;
 use iron::IronResult;
-use user_model::UserSession;
+use crate::user_model::UserSession;
 // Generally wraps any third party dependencies which we might want to mock somehow
 
 pub type DBConnection = PooledConnection<ConnectionManager<PgConnection>>;

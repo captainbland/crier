@@ -6,9 +6,9 @@ use validator_derive::*;
 
 use diesel::{Insertable, Queryable};
 use regex::*;
-use schema::*;
+use crate::schema::*;
 use std::borrow::Cow;
-use user_model::User;
+use crate::user_model::User;
 
 #[derive(Insertable)]
 #[table_name = "seller"]

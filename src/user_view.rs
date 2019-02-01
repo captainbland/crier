@@ -1,6 +1,6 @@
 use maud::*;
-use navbar_info::NavbarInfo;
-use render_tools::*;
+use crate::navbar_info::NavbarInfo;
+use crate::render_tools::*;
 use std::borrow::Cow;
 use std::borrow::ToOwned;
 use validator::{ValidationError, ValidationErrors};

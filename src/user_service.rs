@@ -9,11 +9,11 @@ use diesel::{
 use r2d2::PooledConnection;
 
 use mock_derive::mock;
-use schema::crier_user;
-use seller_model::SellerEntry;
-use type_wrappers::{DBConnection, Session};
-use user_model::UserSession;
-use user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
+use crate::schema::crier_user;
+use crate::seller_model::SellerEntry;
+use crate::type_wrappers::{DBConnection, Session};
+use crate::user_model::UserSession;
+use crate::user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
 use diesel::pg::Pg;
 
 pub struct UserService<T: UserDAO> {
@@ -72,7 +72,7 @@ impl<T: UserDAO + Default> UserService<T> {
                             let user_seller: Option<i32>;
                             {
                                 info!("Loading seller info...");
-                                use schema::seller::dsl::*;
+                                use crate::schema::seller::dsl::*;
                                 user_seller = self
                                     .user_dao
                                     .load_seller_id(u.id, &conn)
@@ -83,7 +83,7 @@ impl<T: UserDAO + Default> UserService<T> {
                             let user_payer: Option<i32>;
                             {
                                 info!("Loading payer info...");
-                                use schema::payer::dsl::*;
+                                use crate::schema::payer::dsl::*;
                                 user_payer = self
                                     .user_dao
                                     .load_payer_id(u.id, &conn)
@@ -117,7 +117,7 @@ impl<T: UserDAO + Default> UserService<T> {
         user_session: &UserSession,
         conn: &DBConnection,
     ) -> Result<User, String> {
-        use schema::crier_user::dsl::*;
+        use crate::schema::crier_user::dsl::*;
         crier_user
             .filter(username.eq(user_session.username.clone()))
             .limit(1)
@@ -166,7 +166,7 @@ impl<T: UserDAO + Default> UserService<T> {
         _con: PooledConnection<ConnectionManager<PgConnection>>,
         _user: User,
     ) {
-        use schema::payer::dsl::*;
+        use crate::schema::payer::dsl::*;
     }
 }
 
@@ -186,13 +186,13 @@ pub struct UserDAOImpl {}
 #[cfg(not(test))]
 impl UserDAO for UserDAOImpl {
     fn create_user(&self, create_user: &UserCreation, conn: &DBConnection) -> QueryResult<usize> {
-        use schema::crier_user::dsl::*;
+        use crate::schema::crier_user::dsl::*;
 
         insert_into(crier_user).values(create_user).execute(conn)
     }
 
     fn load_user(&self, login_query: &LoginQuery, conn: &DBConnection) -> QueryResult<Vec<User>> {
-        use schema::crier_user::dsl::*;
+        use crate::schema::crier_user::dsl::*;
 
         crier_user
             .filter(username.eq(&login_query.username))
@@ -201,7 +201,7 @@ impl UserDAO for UserDAOImpl {
     }
 
     fn load_seller_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>> {
-        use schema::seller::dsl::*;
+        use crate::schema::seller::dsl::*;
         seller
             .select(id)
             .filter(crier_user_id.eq(user_id))
@@ -210,7 +210,7 @@ impl UserDAO for UserDAOImpl {
     }
 
     fn load_payer_id(&self, user_id: i32, conn: &DBConnection) -> QueryResult<Vec<i32>> {
-        use schema::payer::dsl::*;
+        use crate::schema::payer::dsl::*;
         let q = payer
             .select(id)
             .filter(crier_user_id.eq(user_id))

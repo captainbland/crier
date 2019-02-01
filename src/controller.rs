@@ -19,25 +19,25 @@ use router::Params as RouterParams;
 use router::Router;
 use serde_urlencoded::*;
 use staticfile::Static;
-use type_wrappers::*;
+use crate::type_wrappers::*;
 use urlencoded::UrlEncodedQuery;
 use validator::*;
 
-use index_view::*;
-use listing_model::*;
-use navbar_info::{calculate_navbar_info, navbar_info_from_usersession};
-use payer_model::PayerForm;
-use qr_service::*;
-use qr_view::*;
-use r2d2_middleware::*;
-use render_tools::*;
-use stripe_service::*;
-use stripe_view::*;
-use type_wrappers::*;
-use user_model::*;
-use user_service::*;
-use user_view::*;
-use payment_model::PayForm;
+use crate::index_view::*;
+use crate::listing_model::*;
+use crate::navbar_info::{calculate_navbar_info, navbar_info_from_usersession};
+use crate::payer_model::PayerForm;
+use crate::qr_service::*;
+use crate::qr_view::*;
+use crate::r2d2_middleware::*;
+use crate::render_tools::*;
+use crate::stripe_service::*;
+use crate::stripe_view::*;
+use crate::type_wrappers::*;
+use crate::user_model::*;
+use crate::user_service::*;
+use crate::user_view::*;
+use crate::payment_model::PayForm;
 
 #[macro_use]
 mod controller_macros {
@@ -493,7 +493,7 @@ fn get_listing(req: &mut Request) -> IronResult<Response> {
 }
 
 pub fn make_payment(req: &mut Request) -> IronResult<Response> {
-    let mut navbar_info;
+    let navbar_info;
     {
         navbar_info = calculate_navbar_info(req.session());
     }
@@ -502,7 +502,7 @@ pub fn make_payment(req: &mut Request) -> IronResult<Response> {
         user_session = assert_login!(req.session(), &navbar_info).unwrap();
     }
 
-    let payer_id = assert_payer!(user_session, &navbar_info);
+    let _payer_id = assert_payer!(user_session, &navbar_info);
     let pay_form: PayForm = itry!(serde_urlencoded::from_reader(req.body.by_ref()));
     let stripe_service = StripeService::new();
 
@@ -513,7 +513,7 @@ pub fn make_payment(req: &mut Request) -> IronResult<Response> {
 
 
     match pay_result {
-        Some(Ok(res)) => Ok(Response::with((
+        Some(Ok(_res)) => Ok(Response::with((
             status::Ok,
             "Created the payment",
         ))),

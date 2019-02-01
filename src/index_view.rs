@@ -1,6 +1,6 @@
 use maud::*;
-use navbar_info::NavbarInfo;
-use render_tools::*;
+use crate::navbar_info::NavbarInfo;
+use crate::render_tools::*;
 
 pub fn render_index(navbar_info: &NavbarInfo) -> Markup {
     render_page(

@@ -1,6 +1,6 @@
 use iron::IronResult;
-use type_wrappers::*;
-use user_model::UserSession;
+use crate::type_wrappers::*;
+use crate::user_model::UserSession;
 
 #[derive(Copy, Clone)]
 pub struct NavbarInfo {

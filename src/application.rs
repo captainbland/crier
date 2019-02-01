@@ -26,10 +26,10 @@ use staticfile::Static;
 use urlencoded::UrlEncodedQuery;
 use validator::*;
 
-use controller;
-use controller::*;
+use crate::controller;
+use crate::controller::*;
 use env_logger::*;
-use r2d2_middleware;
+use crate::r2d2_middleware;
 
 pub fn run() {
     dotenv().ok();

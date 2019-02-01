@@ -12,22 +12,22 @@ use stripe::{
     Error,
 
 };
-use user_model::UserSession;
+use crate::user_model::UserSession;
 
 use diesel::insert_into;
-use listing_model::*;
-use payer_model::PayerForm;
-use payer_model::*;
-use seller_model::*;
+use crate::listing_model::*;
+use crate::payer_model::PayerForm;
+use crate::payer_model::*;
+use crate::seller_model::*;
 use std::str::FromStr;
-use type_wrappers::{DBConnection, Session};
-use user_model::User;
-use user_service::UserDAOImpl;
-use user_service::UserService;
+use crate::type_wrappers::{DBConnection, Session};
+use crate::user_model::User;
+use crate::user_service::UserDAOImpl;
+use crate::user_service::UserService;
 use std::num;
 use diesel::pg::Pg;
-use payment_model::PaymentEntry;
-use payment_model::Payment;
+use crate::payment_model::PaymentEntry;
+use crate::payment_model::Payment;
 
 pub struct StripeService {
     pub publishable_key: String,
@@ -135,7 +135,7 @@ impl StripeService {
         user_session: UserSession,
         session: &mut Session,
     ) -> std::result::Result<i32, String> {
-        use schema::payer::dsl::*;
+        use crate::schema::payer::dsl::*;
 
         let mut customer_params = CustomerParams::default();
         let payment_source_params = PaymentSourceParams::Source(
@@ -221,7 +221,7 @@ impl StripeService {
         charge_params.customer = payer.service_customer_id;
         let charge_amt = ((listing.cost as f64)*0.02) as u64;
         let destination_amount = listing.cost as u64 - charge_amt;
-        let mut destination_params = DestinationParams {
+        let destination_params = DestinationParams {
             account:  seller.service_id.as_str(),
             amount:  destination_amount
         };
@@ -248,7 +248,7 @@ impl StripeService {
         };
 
         match payment_res {
-            Ok(pay_id) => Ok(String::from("Payment processed successfully")),
+            Ok(_pay_id) => Ok(String::from("Payment processed successfully")),
             Err(e) => Err(String::from(format!("Could not create a payment {}", e)))
         }
 
@@ -296,7 +296,7 @@ impl StripeDAO for StripeDAOImpl {
         seller_entry: SellerEntry,
         conn: &DBConnection,
     ) -> Result<Option<i32>, String> {
-        use schema::seller::dsl::*;
+        use crate::schema::seller::dsl::*;
 
         insert_into(seller)
             .values(seller_entry)
@@ -317,7 +317,7 @@ impl StripeDAO for StripeDAOImpl {
         payer_entry: PayerEntry,
         conn: &DBConnection,
     ) -> Result<Option<i32>, String> {
-        use schema::payer::dsl::*;
+        use crate::schema::payer::dsl::*;
 
         let q = insert_into(payer)
             .values(payer_entry)
@@ -341,7 +341,7 @@ impl StripeDAO for StripeDAOImpl {
         listing_creation: ListingCreation,
         conn: &DBConnection,
     ) -> Result<i32, String> {
-        use schema::listing::dsl::*;
+        use crate::schema::listing::dsl::*;
 
         insert_into(listing)
             .values(listing_creation)
@@ -358,7 +358,7 @@ impl StripeDAO for StripeDAOImpl {
     }
 
     fn get_listing(&self, listing_id: i32, conn: &DBConnection) -> Result<Listing, String> {
-        use schema::listing::dsl::*;
+        use crate::schema::listing::dsl::*;
         match listing
             .filter(id.eq(listing_id))
             .load::<Listing>(conn)
@@ -369,10 +369,10 @@ impl StripeDAO for StripeDAOImpl {
         }
     }
 
-    fn get_payments_for_payer(&self, payer_id_: i32, conn: &DBConnection) -> Result<Vec<Payment>, String> {
-        use schema::payment::dsl::*;
+    fn get_payments_for_payer(&self, _payer_id_: i32, conn: &DBConnection) -> Result<Vec<Payment>, String> {
+        use crate::schema::payment::dsl::*;
         payment.filter(payer_id.eq(payer_id))
-            .load::<Payment>(conn).map_err(|e| String::from("Could not load payments for payer"))
+            .load::<Payment>(conn).map_err(|_e| String::from("Could not load payments for payer"))
 
     }
 
@@ -381,7 +381,7 @@ impl StripeDAO for StripeDAOImpl {
         payer_user_id: i32,
         conn: &DBConnection,
     ) -> Result<Payer, String> {
-        use schema::payer::dsl::*;
+        use crate::schema::payer::dsl::*;
         match payer
             .filter(crier_user_id.eq(payer_user_id))
             .load::<Payer>(conn)
@@ -398,7 +398,7 @@ impl StripeDAO for StripeDAOImpl {
         payer_id: i32,
         conn: &DBConnection,
     ) -> Result<Payer, String> {
-        use schema::payer::dsl::*;
+        use crate::schema::payer::dsl::*;
         match payer
             .filter(id.eq(payer_id))
             .load::<Payer>(conn)
@@ -410,7 +410,7 @@ impl StripeDAO for StripeDAOImpl {
     }
 
     fn get_seller(&self, seller_id: i32, conn: &DBConnection) -> Result<Seller, String> {
-        use schema::seller::dsl::*;
+        use crate::schema::seller::dsl::*;
         match seller
             .filter(id.eq(seller_id))
             .load::<Seller>(conn)
@@ -422,7 +422,7 @@ impl StripeDAO for StripeDAOImpl {
     }
 
     fn create_payment(&self, payment_entry: PaymentEntry, conn: &DBConnection) -> Result<i32, String> {
-        use schema::payment::dsl::*;
+        use crate::schema::payment::dsl::*;
         insert_into(payment)
             .values(payment_entry)
             .returning(id)
