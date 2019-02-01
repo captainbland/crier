@@ -312,7 +312,7 @@ fn get_on_stripe_redirect(req: &mut Request) -> IronResult<Response> {
     let r = user_session.and_then(|user_session| {
         with_connection!(req, |con| match param_map.find(&["code"]) {
             Some(&Value::String(ref code)) => {
-                let mut session = req.session();
+                let session = req.session();
                 stripe_service
                     .onboard_seller(con, code, &user_session, session)
                     .map(|_r| {

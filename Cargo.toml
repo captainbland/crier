@@ -2,7 +2,6 @@
 name = "crier"
 version = "0.1.0"
 authors = ["Captain Bland <lightnix@gmail.com>"]
-edition="2018"
 
 [dependencies]
 iron = "0.6"
