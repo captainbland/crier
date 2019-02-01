@@ -1,26 +1,13 @@
-use core::borrow::BorrowMut;
 use std::env;
 use std::io::Read;
-use std::path::Path;
 use std::string::String;
 
-use diesel::pg::PgConnection;
-use diesel::r2d2::ConnectionManager;
-use dotenv::*;
 use iron::{modifiers::Redirect, prelude::*, status, *};
-use iron_sessionstorage::{backends::*, traits::*, SessionStorage};
+use iron_sessionstorage::traits::*;
 
-use logger::Logger;
-use maud::*;
-use mount::Mount;
 use params::{Params, Value};
-use r2d2::Pool;
-use router::Params as RouterParams;
 use router::Router;
-use serde_urlencoded::*;
-use staticfile::Static;
 use crate::type_wrappers::*;
-use urlencoded::UrlEncodedQuery;
 use validator::*;
 
 use crate::index_view::*;
@@ -33,11 +20,11 @@ use crate::r2d2_middleware::*;
 use crate::render_tools::*;
 use crate::stripe_service::*;
 use crate::stripe_view::*;
-use crate::type_wrappers::*;
 use crate::user_model::*;
 use crate::user_service::*;
 use crate::user_view::*;
 use crate::payment_model::PayForm;
+use maud::html;
 
 #[macro_use]
 mod controller_macros {

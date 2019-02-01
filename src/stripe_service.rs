@@ -135,7 +135,7 @@ impl StripeService {
         user_session: UserSession,
         session: &mut Session,
     ) -> std::result::Result<i32, String> {
-        use crate::schema::payer::dsl::*;
+        #[macro_use] use crate::schema::payer::dsl::*;
 
         let mut customer_params = CustomerParams::default();
         let payment_source_params = PaymentSourceParams::Source(

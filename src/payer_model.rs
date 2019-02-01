@@ -4,10 +4,7 @@ use validator::*;
 use validator_derive::*;
 
 use diesel::{Insertable, Queryable};
-use regex::*;
 use crate::schema::*;
-use std::borrow::Cow;
-use crate::user_model::User;
 
 #[derive(Deserialize, PartialEq, Eq, Debug, Validate)]
 pub struct PayerForm {

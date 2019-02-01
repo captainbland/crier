@@ -1,16 +1,11 @@
 use serde_derive::*;
-use serde_urlencoded::*;
 
 use validator::*;
 use validator_derive::*;
 
 use diesel::{Insertable, Queryable};
-use regex::Regex;
-use regex::*;
 use crate::schema::listing;
-use std::borrow::Cow;
 
-//static NUMBER_REGEX: Regex = Regex::new(r"^\d+(\.\d+)?").unwrap();
 
 #[derive(Deserialize, PartialEq, Eq, Debug, Validate)]
 pub struct ListingForm {

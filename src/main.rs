@@ -1,42 +1,15 @@
 #![feature(plugin)]
 #![feature(proc_macro_hygiene)]
 #![feature(extern_prelude)]
-extern crate bcrypt;
-extern crate core;
+#![warn(unused_extern_crates)]
+
 #[macro_use]
 extern crate diesel;
-extern crate dotenv;
 #[macro_use]
 extern crate log;
-extern crate env_logger;
-#[macro_use]
-extern crate iron;
-extern crate iron_sessionstorage;
-extern crate lodepng;
-extern crate logger;
-extern crate maud;
-extern crate mount;
-extern crate params;
-extern crate plugin;
-extern crate qrcodegen;
-extern crate r2d2;
-extern crate r2d2_postgres;
-extern crate redis;
-extern crate regex;
-extern crate reqwest;
 #[macro_use]
 extern crate router;
-extern crate serde_derive;
-extern crate serde_json;
-extern crate serde_urlencoded;
-extern crate staticfile;
-extern crate stripe;
-extern crate urlencoded;
-extern crate validator;
-#[macro_use]
-extern crate validator_derive;
-#[macro_use]
-extern crate mock_derive;
+
 
 use crate::application::run;
 
