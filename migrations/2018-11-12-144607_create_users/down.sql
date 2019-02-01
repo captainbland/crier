@@ -1,3 +1,5 @@
+DROP TABLE payment;
+
 DROP TABLE listing;
 
 DROP TABLE seller;

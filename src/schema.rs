@@ -29,6 +29,17 @@ table! {
 }
 
 table! {
+    payment (id) {
+        id -> Int4,
+        payer_id -> Int4,
+        seller_id -> Int4,
+        listing_id -> Int4,
+        cost -> Int4,
+        currency -> Varchar,
+    }
+}
+
+table! {
     seller (id) {
         id -> Int4,
         crier_user_id -> Int4,
@@ -41,6 +52,15 @@ table! {
 
 joinable!(listing -> seller (seller_id));
 joinable!(payer -> crier_user (crier_user_id));
+joinable!(payment -> listing (listing_id));
+joinable!(payment -> payer (payer_id));
+joinable!(payment -> seller (seller_id));
 joinable!(seller -> crier_user (crier_user_id));
 
-allow_tables_to_appear_in_same_query!(crier_user, listing, payer, seller,);
+allow_tables_to_appear_in_same_query!(
+    crier_user,
+    listing,
+    payer,
+    payment,
+    seller,
+);

@@ -26,6 +26,8 @@ use user_service::UserDAOImpl;
 use user_service::UserService;
 use std::num;
 use diesel::pg::Pg;
+use payment_model::PaymentEntry;
+use payment_model::Payment;
 
 pub struct StripeService {
     pub publishable_key: String,
@@ -224,19 +226,31 @@ impl StripeService {
             amount:  destination_amount
         };
 
-
-
         charge_params.destination = Some(destination_params);
         charge_params.description = Some(listing.title.as_str());
 
-        match stripe::Charge::create(&client, charge_params) {
-            Ok(_) => Ok(String::from("Payment was processed")),
+        let payment_res = match stripe::Charge::create(&client, charge_params) {
+            Ok(_) => {
+                let payment_entry = PaymentEntry {
+                    seller_id,
+                    payer_id,
+                    listing_id,
+                    cost: listing.cost,
+                    currency: listing.currency
+                };
+
+                self.stripe_dao.create_payment(payment_entry, &con)
+            },
             Err(e) => {
                 warn!("There was a problem paying a payment {:?}", e);
-                Err(String::from("There was an error processing your payment"))
+                return Err(String::from("There was an error processing your payment"));
             }
-        }
+        };
 
+        match payment_res {
+            Ok(pay_id) => Ok(String::from("Payment processed successfully")),
+            Err(e) => Err(String::from(format!("Could not create a payment {}", e)))
+        }
 
     }
 }
@@ -264,6 +278,8 @@ pub trait StripeDAO {
         conn: &DBConnection,
     ) -> Result<Payer, String>;
     fn get_seller(&self, seller_id: i32, conn: &DBConnection) -> Result<Seller, String>;
+    fn create_payment(&self, payment_entry: PaymentEntry, conn: &DBConnection) -> Result<i32, String>;
+    fn get_payments_for_payer(&self, payer_id: i32, conn: &DBConnection) -> Result<Vec<Payment>, String>;
 }
 
 pub struct StripeDAOImpl {}
@@ -306,7 +322,9 @@ impl StripeDAO for StripeDAOImpl {
         let q = insert_into(payer)
             .values(payer_entry)
             .returning(id);
-        println!("payer query: {:?}", diesel::debug_query::<Pg,_>(&q));
+
+        debug!("payer query: {:?}", diesel::debug_query::<Pg,_>(&q));
+
         q.get_results(conn)
             .map_err(|e| {
                 info!(
@@ -336,7 +354,7 @@ impl StripeDAO for StripeDAOImpl {
                 );
                 format!("There was a problem creating listing information")
             })
-            .map(|v| v.clone().pop().unwrap())
+            .map(|v| v.clone().pop().expect("A payment should have been created here"))
     }
 
     fn get_listing(&self, listing_id: i32, conn: &DBConnection) -> Result<Listing, String> {
@@ -349,6 +367,13 @@ impl StripeDAO for StripeDAOImpl {
             Ok(Some(res)) => Ok(res),
             _ => Err(String::from("Could not get listing")),
         }
+    }
+
+    fn get_payments_for_payer(&self, payer_id_: i32, con: &DBConnection) -> Result<Vec<Payment>, String> {
+        use schema::payment::dsl::*;
+        match payment.filter(payer_id.eq(payer_id_))
+            .load::<Payment>(conn)
+
     }
 
     fn get_payer_by_user_id(
@@ -394,5 +419,18 @@ impl StripeDAO for StripeDAOImpl {
             Ok(Some(res)) => Ok(res),
             _ => Err(String::from("Could not get seller")),
         }
+    }
+
+    fn create_payment(&self, payment_entry: PaymentEntry, conn: &DBConnection) -> Result<i32, String> {
+        use schema::payment::dsl::*;
+        insert_into(payment)
+            .values(payment_entry)
+            .returning(id)
+            .get_results::<i32>(conn)
+            .map_err(|e| {
+                warn!("There was a problem creating a payment: {:?}", e);
+                String::from("There was a problem creating this payment")
+            })
+            .map(|v| v.clone().pop().expect("A payment should have been created"))
     }
 }

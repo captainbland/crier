@@ -34,3 +34,12 @@ CREATE TABLE listing (
   amount INT4 DEFAULT NULL,
   limited_amount BOOLEAN DEFAULT FALSE
 );
+
+CREATE TABLE payment (
+  id SERIAL UNIQUE PRIMARY KEY,
+  payer_id INT4 NOT NULL REFERENCES payer(id),
+  seller_id INT4 NOT NULL REFERENCES seller(id),
+  listing_id INT4 NOT NULL REFERENCES listing(id),
+  cost INT4 NOT NULL,
+  currency VARCHAR(3) NOT NULL
+);

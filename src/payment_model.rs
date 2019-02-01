@@ -13,3 +13,23 @@ use user_model::User;
 pub struct PayForm {
     pub listing_id: i32
 }
+
+#[derive(Deserialize, PartialEq, Eq, Debug, Validate)]
+#[derive(Insertable)]
+#[table_name="payment"]
+pub struct PaymentEntry {
+    pub payer_id: i32,
+    pub seller_id: i32,
+    pub listing_id: i32,
+    pub cost: i32,
+    pub currency: String
+}
+
+#[derive(Queryable)]
+pub struct Payment {
+    pub payer_id: i32,
+    pub seller_id: i32,
+    pub listing_id: i32,
+    pub cost: i32,
+    pub currency: String
+}
