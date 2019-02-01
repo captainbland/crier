@@ -11,6 +11,8 @@ use mock_derive::mock;
 use crate::type_wrappers::{DBConnection, Session};
 use crate::user_model::UserSession;
 use crate::user_model::{LoginForm, LoginQuery, RegisterForm, User, UserCreation};
+use diesel::insert_into;
+use diesel::pg::Pg;
 
 pub struct UserService<T: UserDAO> {
     user_dao: T,
